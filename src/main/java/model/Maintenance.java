@@ -1,39 +1,39 @@
 package model;
 
 public class Maintenance {
-    private long begin;
-    private long end;
+    private int begin;
+    private int duration;
 
-    public Maintenance(long begin, long end) {
+    public Maintenance(int begin, int duration) {
         this.begin = begin;
-        this.end = end;
+        this.duration = duration;
     }
 
     public long getBegin() {
         return begin;
     }
 
-    public void setBegin(long begin) {
+    public void setBegin(int begin) {
         this.begin = begin;
     }
 
-    public long getEnd() {
-        return end;
+    public int getDuration() {
+        return duration;
     }
 
-    public void setEnd(long end) {
-        this.end = end;
+    public void setDuration(int duration) {
+        this.duration = duration;
     }
 
-    public long getTotalTime() {
-        return end - begin;
+    public int getEndTime() {
+        return this.begin + this.duration;
     }
-
     @Override
     public String toString() {
         return "Maintenance{" +
                 "begin=" + begin +
-                ", end=" + end +
+                ", duration=" + duration +
                 '}';
     }
+
 }

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class TaskGenerator {
+public class TaskService {
 
     public static List<Task> generateTasks(int amount, int longestTime) throws NonNegativeArgException {
         if (longestTime <= 0 ) {
@@ -30,6 +30,16 @@ public class TaskGenerator {
             tasks.add(task);
         }
         return tasks;
+    }
+
+    public static int getTotalTasksDuration(List<Task> tasks) {
+        int totalTime = 0;
+        if (tasks != null) {
+            for (Task task : tasks) {
+                totalTime += Math.max(task.getFirst().getDuration(), task.getSecond().getDuration());
+            }
+        }
+        return totalTime;
     }
 
 }
