@@ -1,6 +1,5 @@
 package service;
 
-import exception.NonNegativeArgException;
 import model.Maintenance;
 
 import java.util.ArrayList;
@@ -16,8 +15,8 @@ public class MaintenanceService {
 
         int currentEndTime = 0;
         int period = totalTime / totalAmount;
-        int minMaintenenceTime = Math.max((int) (0.005 * totalTime), 1);
-        int maxMaintenenceTime = Math.max((int) (0.01 * totalTime), 2);
+        int minMaintenenceTime = Math.max((int) (0.001 * totalTime), 1);
+        int maxMaintenenceTime = Math.max((int) (0.005 * totalTime), 2);
         List<Maintenance> maintenances = new ArrayList<>();
 
         for (int currentAmount = 0; currentAmount < totalAmount; currentAmount++){

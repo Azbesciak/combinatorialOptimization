@@ -1,9 +1,12 @@
 package model;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 public class Operation {
     private int duration;
-    private boolean isFinished;
-    private Machine host;
+    private int beginTime;
+    private int endTime;
 
     public Operation(int duration) {
         this.duration = duration;
@@ -13,32 +16,26 @@ public class Operation {
         return duration;
     }
 
+    public int getBeginTime() {
+        return beginTime;
+    }
+
+    public int getEndTime() {
+        return endTime;
+    }
+
     public void setDuration(int duration) {
         this.duration = duration;
     }
 
-    public boolean isFinished() {
-        return isFinished;
-    }
-
-    public void setFinished(boolean finished) {
-        isFinished = finished;
-    }
-
-    public Machine getHost() {
-        return host;
-    }
-
-    public void setHost(Machine host) {
-        this.host = host;
+    public void startOperation(int startTime) {
+        this.beginTime = startTime;
+        this.endTime = startTime + this.duration;
     }
 
     @Override
     public String toString() {
-        return "Operation{" +
-                "duration=" + duration +
-                ", isFinished=" + isFinished +
-                ", host=" + host +
-                '}';
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(this);
     }
 }
