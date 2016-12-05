@@ -2,40 +2,14 @@ package model;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import model.abstracts.Event;
 
-public class Maintenance {
-    private int begin;
-    private int duration;
-    private int end;
+public class Maintenance extends Event{
 
     public Maintenance(int begin, int duration) {
-        this.begin = begin;
-        this.duration = duration;
-        this.end = begin + duration;
-    }
-
-    public long getBegin() {
-        return begin;
-    }
-
-    public void setBegin(int begin) {
-        this.begin = begin;
-    }
-
-    public int getDuration() {
-        return duration;
-    }
-
-    public void setDuration(int duration) {
-        this.duration = duration;
-    }
-
-    public int getEndTime() {
-        return this.end;
-    }
-
-    public int getEnd() {
-        return end;
+        super(duration);
+        setBegin(begin);
+        setEnd(begin + duration);
     }
 
     @Override

@@ -2,35 +2,28 @@ package model;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import enumeration.Machine;
+import model.abstracts.Event;
 
-public class Operation {
-    private int duration;
-    private int beginTime;
-    private int endTime;
+public class Operation extends Event{
+
+    private Machine machine;
 
     public Operation(int duration) {
-        this.duration = duration;
-    }
-
-    public int getDuration() {
-        return duration;
-    }
-
-    public int getBeginTime() {
-        return beginTime;
-    }
-
-    public int getEndTime() {
-        return endTime;
-    }
-
-    public void setDuration(int duration) {
-        this.duration = duration;
+        super(duration);
     }
 
     public void startOperation(int startTime) {
-        this.beginTime = startTime;
-        this.endTime = startTime + this.duration;
+        setBegin(startTime);
+        setEnd(startTime + getDuration());
+    }
+
+    public Machine getMachine() {
+        return machine;
+    }
+
+    public void setMachine(Machine machine) {
+        this.machine = machine;
     }
 
     @Override
