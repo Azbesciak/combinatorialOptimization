@@ -22,42 +22,55 @@ public class OperationsService {
 	public static void prepareFirstMachineOperations(List<Task> tasks, List<Maintenance> machineOneMaintenaces) {
 		Iterator<Maintenance> maintenanceIterator = machineOneMaintenaces.iterator();
 		Maintenance nearestMaintenance = maintenanceIterator.next();
-		int lastOperationEndTime = 0;
+		int lastOperationEndTime = -1;
 		for (Task task : tasks) {
 			Operation operation;
-			if (task.getFirst().getMachine() == Machine.ONE) {
+			if (Machine.ONE.equals(task.getFirst().getMachine())) {
 				operation = task.getFirst();
 			} else {
 				operation = task.getSecond();
 			}
-			if (nearestMaintenance != null &&
-					nearestMaintenance.getBegin() <= lastOperationEndTime + operation.getDuration()) {
-				lastOperationEndTime = nearestMaintenance.getEnd() + 1;
-				if (maintenanceIterator.hasNext()) {
-					nearestMaintenance = maintenanceIterator.next();
-				} else {
-					nearestMaintenance = null;
-				}
+			lastOperationEndTime = Math.max(lastOperationEndTime, operation.getReadyTime() - 1);
+
+			while (nearestMaintenance != null && lastOperationEndTime > nearestMaintenance.getBegin()) {
+				nearestMaintenance = nextIteratorsObject(maintenanceIterator);
 			}
-			operation.startOperation(lastOperationEndTime);
-			lastOperationEndTime = operation.getEnd() + 1;
+
+			if (nearestMaintenance != null &&
+					nearestMaintenance.getBegin() <= lastOperationEndTime + operation.getDuration() + 1) {
+				lastOperationEndTime = nearestMaintenance.getEnd();
+				nearestMaintenance = nextIteratorsObject(maintenanceIterator);
+
+			}
+			operation.startOperation(lastOperationEndTime + 1);
+			lastOperationEndTime = operation.getEnd();
 		}
 	}
 
 	public static void prepareSecondMachineOperations(List<Task> tasks) {
-		int lastOperationEndTime = 0;
+		int lastOperationEndTime = -1;
 		for (Task task : tasks) {
 			Operation operation;
 			int firstMachineLastOperationEndTime;
-			if (task.getFirst().getMachine() == Machine.TWO) {
+			if (Machine.TWO.equals(task.getFirst().getMachine())) {
 				operation = task.getFirst();
 				firstMachineLastOperationEndTime = task.getSecond().getEnd();
 			} else {
 				operation = task.getSecond();
-				firstMachineLastOperationEndTime = task.getSecond().getEnd();
+				firstMachineLastOperationEndTime = task.getFirst().getEnd();
 			}
 			lastOperationEndTime = Math.max(lastOperationEndTime, firstMachineLastOperationEndTime);
-			operation.startOperation(lastOperationEndTime + 1);
+
+			lastOperationEndTime = operation.
+					startOperationWhenPossibleAndGetEnd(lastOperationEndTime + 1);
+		}
+	}
+
+	private static <E> E nextIteratorsObject(Iterator<E> iterator) {
+		if (iterator.hasNext()) {
+			return iterator.next();
+		} else {
+			return null;
 		}
 	}
 }

@@ -1,7 +1,9 @@
+import com.google.gson.Gson;
 import model.Maintenance;
 import model.Task;
 import service.MaintenanceService;
 import service.TaskService;
+import service.UtilsService;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,8 +19,7 @@ public class Main {
         AtomicInteger maintenanceLength = new AtomicInteger();
         maintenances.stream().parallel().forEach(t -> maintenanceLength.getAndAdd(t.getDuration()));
 		List<Task> taskList = TaskService.randomGenerator(maintenances, tasks);
-		System.out.println(taskList);
+		UtilsService.printPrettyJson(taskList);
 	}
 }
-//TODO check begin time of each operation depending on the machine.
 //TODO upgrade tests

@@ -2,6 +2,7 @@ package service;
 
 import enumeration.Machine;
 import model.Maintenance;
+import model.Operation;
 import model.Task;
 
 import org.junit.jupiter.api.AfterEach;
@@ -58,17 +59,20 @@ public class OperationsServiceTest {
 	public void prepareMachineFirstOperations() throws Exception {
 		OperationsService.assignOperationsToMachines(tasks);
 		OperationsService.prepareFirstMachineOperations(tasks, maintenances);
-		assertTrue(tasks.size() == taskAmount);
-		int previousEnd = -1;
-//		Iterator<Maintenance> iterator = maintenances.iterator();
-//		Maintenance maintenance = null;
-//		if (iterator.hasNext()) {
-//			maintenance = iterator.next();
-//		}
+
 		assertAll("First machine operations",
-				() -> assertTrue(tasks.stream().allMatch(t -> t.getFirst().getEnd() != 0 || t.getSecond().getEnd() != 0))
-//				() -> assertTrue(tasks.stream().allMatch((a, b) -> a.getFirst().getEnd() < b.getFirst().getBegin()))
-		);
+				() -> assertTrue(tasks.stream().allMatch(t -> t.getFirst().getEnd() != 0 || t.getSecond().getEnd() != 0)),
+				() -> assertTrue(tasks.size() == taskAmount)
+				);
+		for (int i = 1; i < tasks.size(); i++) {
+			Operation previous;
+			Operation next;
+			Task previousTask = tasks.get(i - 1);
+			Task nextTask = tasks.get(i);
+			previous = Machine.ONE.equals(previousTask.getFirst().getMachine()) ? previousTask.getFirst() : previousTask.getSecond();
+			next = Machine.ONE.equals(nextTask.getFirst().getMachine()) ? nextTask.getFirst() : nextTask.getSecond();
+			assertTrue(previous.getEnd() < next.getBegin());
+		}
 
 	}
 
@@ -76,5 +80,20 @@ public class OperationsServiceTest {
 	public void prepareSecondMachineOperations() {
 		OperationsService.assignOperationsToMachines(tasks);
 		OperationsService.prepareSecondMachineOperations(tasks);
+		assertAll("Second machine operations",
+				() -> assertTrue(tasks.stream().allMatch(t -> t.getFirst().getEnd() != 0 || t.getSecond().getEnd() != 0)),
+				() -> assertTrue(tasks.size() == taskAmount)
+		);
+		for (int i = 1; i < tasks.size(); i++) {
+			Task previousTask = tasks.get(i - 1);
+			Task nextTask = tasks.get(i);
+			Operation previous = Machine.TWO.equals(previousTask.getFirst().getMachine()) ?
+					previousTask.getFirst() : previousTask.getSecond();
+			Operation next = Machine.TWO.equals(nextTask.getFirst().getMachine()) ?
+					nextTask.getFirst() : nextTask.getSecond();
+			Operation machineOneNext = Machine.ONE.equals(nextTask.getFirst().getMachine()) ?
+					nextTask.getFirst() : nextTask.getSecond();
+			assertTrue(previous.getEnd() < next.getBegin() && machineOneNext.getEnd() < next.getBegin());
+		}
 	}
 }

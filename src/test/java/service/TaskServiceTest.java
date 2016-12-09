@@ -1,9 +1,11 @@
 package service;
 
 import exception.NonNegativeArgException;
+import model.Maintenance;
 import model.Task;
 import org.junit.jupiter.api.Test;
 
+import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,6 +32,18 @@ public class TaskServiceTest {
 	}
 
 	@Test
+	public void readyTimeTest() throws Exception {
+		int longestTime = 15;
+		int amount = 100;
+		List<Task> tasks = TaskService.generateTasks(amount, longestTime);
+		int totalTasksDuration = TaskService.getTotalTasksDuration(tasks);
+		for (Task task : tasks) {
+			assertTrue(task.getFirst().getReadyTime() < 0.5 * totalTasksDuration);
+			assertTrue(task.getSecond().getReadyTime() < 0.5 * totalTasksDuration);
+		}
+	}
+
+	@Test
 	public void generateTasksNegativeLongTime() throws Exception {
 		int longestTime = 1;
 		int amount = 0;
@@ -41,6 +55,20 @@ public class TaskServiceTest {
 		int longestTime = 0;
 		int amount = 1;
 		assertThrows(NonNegativeArgException.class, () -> TaskService.generateTasks(amount, longestTime));
+	}
+
+	@Test
+	public void randomGeneratorTest() throws  Exception {
+		int longestTime = 15;
+		int amount = 100;
+		List<Task> tasks = TaskService.generateTasks(amount, longestTime);
+		int totalTasksDuration = TaskService.getTotalTasksDuration(tasks);
+		List<Maintenance> maintenances = MaintenanceService.
+				generateMaintenances(totalTasksDuration, amount / 4);
+		List<Task> randoms = TaskService.randomGenerator(maintenances, tasks);
+		assertAll("randomGeneratorTest", () -> assertTrue(true));
+
+
 	}
 
 

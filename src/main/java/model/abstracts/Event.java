@@ -33,4 +33,12 @@ public abstract class Event {
 		return end;
 	}
 
+	@Override
+	public String toString() {
+		return "Event{" +
+				"begin=" + begin +
+				", duration=" + duration +
+				", end=" + end +
+				'}';
+	}
 }

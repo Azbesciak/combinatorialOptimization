@@ -11,10 +11,4 @@ public class Maintenance extends Event{
         setBegin(begin);
         setEnd(begin + duration);
     }
-
-    @Override
-    public String toString() {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        return gson.toJson(this);
-    }
 }
