@@ -1,7 +1,5 @@
 package model;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import enumeration.Machine;
 import model.abstracts.Event;
 

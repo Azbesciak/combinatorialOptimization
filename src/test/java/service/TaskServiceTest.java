@@ -1,7 +1,9 @@
 package service;
 
+import enumeration.Machine;
 import exception.NonNegativeArgException;
 import model.Maintenance;
+import model.Operation;
 import model.Task;
 import org.junit.jupiter.api.Test;
 
@@ -66,9 +68,19 @@ public class TaskServiceTest {
 		List<Maintenance> maintenances = MaintenanceService.
 				generateMaintenances(totalTasksDuration, amount / 4);
 		List<Task> randoms = TaskService.randomGenerator(maintenances, tasks);
-		assertAll("randomGeneratorTest", () -> assertTrue(true));
+		assertAll("randomGeneratorTest",
+				() -> assertTrue(randoms.stream().allMatch(t -> t.getId() < amount)),
+				() -> assertTrue(randoms.parallelStream().allMatch(t -> t.getFirst().getEnd() > 0 && t.getSecond().getEnd() > 0)),
+				() -> assertTrue(randoms.parallelStream().allMatch(this::randomGeneratorTestOperationsSequence)));
+	}
 
-
+	private boolean randomGeneratorTestOperationsSequence(Task task) {
+		Operation first = task.getFirst();
+		Operation second = task.getSecond();
+		if (Machine.ONE.equals(first.getMachine())) {
+			return first.getEnd() < second.getBegin();
+		} else
+			return second.getEnd() < first.getBegin();
 	}
 
 

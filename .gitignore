@@ -1,4 +1,8 @@
-gradle
-build
-.idea
-.gradle
+gradle/
+build/
+.idea/
+.gradle/
+instances/
+solutions/
+src/main/resources/
+src/test/resources/

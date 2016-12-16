@@ -1,6 +1,7 @@
 package service;
 
 import exception.NonNegativeArgException;
+import model.wrapper.Instance;
 import model.Maintenance;
 import model.Operation;
 import model.Task;
@@ -10,6 +11,10 @@ import java.util.*;
 import static service.OperationsService.*;
 
 public class TaskService {
+
+	private TaskService() {
+		throw new UnsupportedOperationException();
+	}
 
 	public static List<Task> generateTasks(int amount, int longestTime) throws NonNegativeArgException {
 		if (longestTime <= 0) {
@@ -44,6 +49,10 @@ public class TaskService {
 			}
 		}
 		return totalTime;
+	}
+
+	public static List<Task> randomGenerator(final Instance instance) {
+		return randomGenerator(instance.getMaintenances(), instance.getTasks());
 	}
 
 	public static List<Task> randomGenerator(final List<Maintenance> maintenances, final List<Task> tasks) {

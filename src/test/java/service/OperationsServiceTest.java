@@ -30,6 +30,7 @@ public class OperationsServiceTest {
 		tasks = TaskService.generateTasks(taskAmount, longestTime);
 		int totalTime = TaskService.getTotalTasksDuration(tasks);
 		maintenances = MaintenanceService.generateMaintenances(totalTime, maintenancesAmount);
+
 	}
 
 	@AfterEach
