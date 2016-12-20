@@ -1,11 +1,10 @@
 import model.wrapper.Instance;
 import model.Maintenance;
 import model.Task;
-import model.wrapper.Solution;
 import repository.InstanceRepository;
 import service.MaintenanceService;
+import service.SolutionService;
 import service.TaskService;
-import service.UtilsService;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -37,7 +36,7 @@ public class Main {
 
 		List<Task> taskList = TaskService.randomGenerator(maintenances, tasks);
 		instance.setTasks(taskList);
-		new Solution(instance).persistSolution("test");
+		SolutionService.persistSolution(instance, "test");
 //		UtilsService.printPrettyJson(taskList);
 	}
 

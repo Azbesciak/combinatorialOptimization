@@ -1,12 +1,13 @@
-package model.wrapper;
+package service;
 
-import com.google.gson.Gson;
+import enumeration.EventType;
 import enumeration.Machine;
 import model.Maintenance;
 import model.Operation;
 import model.Task;
 import model.abstracts.Event;
-import service.UtilsService;
+import model.wrapper.Instance;
+import model.wrapper.TimeLineEvent;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -16,39 +17,29 @@ import java.util.List;
 
 import static service.UtilsService.writeLineToFile;
 
-public class Solution {
+public class SolutionService {
 
-	private static String SOLUTIONS_DIRECTORY = "solutions";
-	private Instance instance;
+	private static final String SOLUTIONS_DIRECTORY = "solutions";
 
-	public Solution(Instance instance) {
-		this.instance = instance;
+	private SolutionService() {
 	}
 
-	public Instance getInstance() {
-		return instance;
-	}
-
-	public void setInstance(Instance instance) {
-		this.instance = instance;
-	}
-
-	public void persistSolution(String persistenceId) throws IOException {
-		String schedulingTime = getSchedulingTime();
+	public static void persistSolution(Instance instance, String persistenceId) throws IOException {
+		String schedulingTime = getSchedulingTime(instance);
 		List<Maintenance> maintenances = instance.getMaintenances();
 		Iterator<Maintenance> maintenanceIterator = maintenances.iterator();
 		StringBuilder machineOneSB = new StringBuilder("M1: ");
-		List<TimeLineEvent> machineOneEvents = prepareTimeLineForMachine(Machine.ONE, maintenanceIterator);
+		List<TimeLineEvent> machineOneEvents = prepareTimeLineForMachine(Machine.ONE, maintenanceIterator, instance);
 		for (TimeLineEvent machineOneEvent : machineOneEvents) {
 			machineOneSB.append(machineOneEvent);
 		}
 		StringBuilder machineTwoSB = new StringBuilder("M2: ");
 		Iterator<Maintenance> dummyIterator = new ArrayList<Maintenance>().iterator();
-		List<TimeLineEvent> machineTwoEvents = prepareTimeLineForMachine(Machine.TWO, dummyIterator);
+		List<TimeLineEvent> machineTwoEvents = prepareTimeLineForMachine(Machine.TWO, dummyIterator, instance);
 		for (TimeLineEvent machineTwoEvent : machineTwoEvents) {
 			machineTwoSB.append(machineTwoEvent);
 		}
-		String maintenancesLine = prepareMaintenancesLine();
+		String maintenancesLine = prepareMaintenancesLine(instance);
 		String machineOneIdle = prepareIdleLineForMachine(machineOneEvents);
 		String machineTwoIdle = prepareIdleLineForMachine(machineTwoEvents);
 		String solutionFile = getSolutionsDirectory() + persistenceId;
@@ -66,24 +57,24 @@ public class Solution {
 		}
 	}
 
-	private String getSchedulingTime() {
+	private static String getSchedulingTime(Instance instance) {
 		int initialSchedulingTime = instance.getInitialSchedulingTime();
 		int currentSchedulingTime = instance.getCurrentSchedulingTime();
 		return initialSchedulingTime + ", " + currentSchedulingTime;
 	}
 
-	private String prepareMaintenancesLine() {
+	private static String prepareMaintenancesLine(Instance instance) {
 		List<Maintenance> maintenances = instance.getMaintenances();
 		int maintenancesAmount = maintenances.size();
 		int maintenancesTotalDuration = maintenances.stream().mapToInt(Event::getDuration).sum();
 		return maintenancesAmount + ", " + maintenancesTotalDuration;
 	}
-	private String prepareIdleLineForMachine(List<TimeLineEvent> machineEvents) {
+	private static String prepareIdleLineForMachine(List<TimeLineEvent> machineEvents) {
 		int idleCounter = 0;
 		int idleTotalTime = 0;
 		System.out.println("machine events size : " + machineEvents.size());
 		for (TimeLineEvent machineEvent : machineEvents) {
-			if (EventType.IDLE.equals(machineEvent.eventType)) {
+			if (EventType.IDLE.equals(machineEvent.getEventType())) {
 				idleCounter++;
 				idleTotalTime += machineEvent.getDuration();
 			}
@@ -91,7 +82,9 @@ public class Solution {
 		return idleCounter + ", " + idleTotalTime;
 	}
 
-	public List<TimeLineEvent> prepareTimeLineForMachine(Machine machine, Iterator<Maintenance> maintenanceIterator) {
+	public static List<TimeLineEvent> prepareTimeLineForMachine(Machine machine,
+																Iterator<Maintenance> maintenanceIterator,
+																Instance instance) {
 		List<TimeLineEvent> events = new ArrayList<>();
 		Maintenance nextMaintenance = null;
 		int maintenanceCounter = 0;
@@ -145,7 +138,8 @@ public class Solution {
 		return events;
 	}
 
-	private int checkInitialIdleness(List<TimeLineEvent> events, Maintenance firstMaintenance, Operation firstOperation) {
+	private static int checkInitialIdleness(List<TimeLineEvent> events, Maintenance firstMaintenance,
+											Operation firstOperation) {
 		if (firstMaintenance != null && firstMaintenance.getBegin() < firstOperation.getBegin()) {
 			TimeLineEvent timeLineEvent =
 					new TimeLineEvent(0, firstMaintenance.getBegin(), EventType.IDLE, 0);
@@ -160,7 +154,7 @@ public class Solution {
 		return 0;
 	}
 
-	private int checkIdleExistence(List<TimeLineEvent> events, Event recent, Event current, int idleCounter) {
+	private static int checkIdleExistence(List<TimeLineEvent> events, Event recent, Event current, int idleCounter) {
 		int idleTime = current.getBegin() - recent.getEnd();
 		if (idleTime > 0) {
 			TimeLineEvent timeLineEvent = new TimeLineEvent(recent.getEnd(), idleTime,
@@ -173,56 +167,4 @@ public class Solution {
 	private static String getSolutionsDirectory() throws IOException {
 		return UtilsService.getDirectory(SOLUTIONS_DIRECTORY);
 	}
-
-	public class TimeLineEvent extends Event {
-		private String identifier;
-		EventType eventType;
-
-		public TimeLineEvent(Event event, EventType eventType, int operationNumber, int taskId) {
-			super(event.getDuration());
-			setBegin(event.getBegin());
-			this.eventType = eventType;
-			setIdentifier(operationNumber, taskId);
-		}
-
-		public TimeLineEvent(Event event, EventType eventType, int operationNumber) {
-			this(event.getBegin(), event.getDuration(), eventType, operationNumber);
-		}
-
-		public TimeLineEvent(int begin, int duration, EventType eventType, int operationNumber) {
-			super(duration);
-			setBegin(begin);
-			this.eventType = eventType;
-			setIdentifier(operationNumber);
-		}
-
-		private void setIdentifier(int operationNumber, int taskId) {
-			setIdentifier(operationNumber);
-			identifier += "_" + taskId;
-		}
-
-		private void setIdentifier(int operationNumber) {
-			identifier = eventType.toString() + operationNumber;
-		}
-
-		@Override
-		public String toString() {
-			return identifier + ", " + getBegin() + ", " + getDuration() + "; ";
-		}
-	}
-
-	private enum EventType {
-		IDLE("idle"), MAINTENANCE("maint"), OPERATION("op");
-
-		private final String name;
-
-		EventType(String name) {
-			this.name = name;
-		}
-
-		public String toString() {
-			return this.name;
-		}
-	}
-
 }
