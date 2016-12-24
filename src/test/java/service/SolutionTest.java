@@ -1,6 +1,8 @@
-package model;
+package service;
 
 import enumeration.Machine;
+import model.Maintenance;
+import model.Task;
 import model.wrapper.Instance;
 import model.wrapper.TimeLineEvent;
 import org.junit.jupiter.api.Test;
@@ -11,6 +13,7 @@ import startup.TestStartup;
 
 import java.util.Iterator;
 import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SolutionTest {
@@ -22,10 +25,10 @@ public class SolutionTest {
 		instance.setTasks(tasks);
 		Iterator<Maintenance> iterator = instance.getMaintenances().iterator();
 		List<TimeLineEvent> events = SolutionService.prepareTimeLineForMachine(Machine.ONE, iterator, instance);
-		events.forEach(System.out::println);
 		for (int i = 1; i < events.size(); i++) {
 			TimeLineEvent recent = events.get(i - 1);
 			TimeLineEvent current = events.get(i);
+			System.out.println(current);
 			assertTrue(0 == current.getBegin() - (recent.getBegin() + recent.getDuration()));
 		}
 

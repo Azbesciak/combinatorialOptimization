@@ -39,4 +39,15 @@ public class UtilsService {
 		line += '\n';
 		writer.write(line.getBytes());
 	}
+
+	public static boolean writeAllLinesToFile(FileOutputStream writer, String... lines) throws IOException {
+		if (lines != null) {
+			for (String line : lines) {
+				line += '\n';
+				writer.write(line.getBytes());
+			}
+			return true;
+		}
+		return false;
+	}
 }

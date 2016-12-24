@@ -10,17 +10,9 @@ import java.util.List;
 import java.util.Random;
 
 public class OperationsService {
-	public static void assignOperationsToMachines(List<Task> tasks) {
-		Random random = new Random();
-		for (Task task : tasks) {
-			boolean roulette = random.nextBoolean();
-			task.getFirst().setMachine(roulette ? Machine.ONE : Machine.TWO);
-			task.getSecond().setMachine(roulette ? Machine.TWO : Machine.ONE);
-		}
-	}
 
-	public static void prepareFirstMachineOperations(List<Task> tasks, List<Maintenance> machineOneMaintenaces) {
-		Iterator<Maintenance> maintenanceIterator = machineOneMaintenaces.iterator();
+	public static void prepareFirstMachineOperations(List<Task> tasks, List<Maintenance> machineOneMaintenances) {
+		Iterator<Maintenance> maintenanceIterator = machineOneMaintenances.iterator();
 		Maintenance nearestMaintenance = maintenanceIterator.next();
 		int lastOperationEndTime = 0;
 		for (Task task : tasks) {

@@ -8,14 +8,24 @@ public class Operation extends Event{
     private Machine machine;
     private int readyTime;
 
-    public Operation(int duration) {
-        super(duration);
-        this.readyTime = 0;
-    }
+//    public Operation(int duration, Machine machine) {
+//        super(duration);
+//        this.machine = machine;
+//        this.readyTime = 0;
+//    }
 
-    public Operation(int duration,  int readyTime) {
+    private Operation(int duration,  int readyTime, Machine machine) {
         super(duration);
         this.readyTime = readyTime;
+        this.machine = machine;
+    }
+
+    public static Operation createFirstMachineOperation(int duration,  int readyTime) {
+        return new Operation(duration, readyTime, Machine.ONE);
+    }
+
+    public static Operation createSecondMachineOperation(int duration) {
+        return new Operation(duration, 0, Machine.TWO);
     }
 
     public void startOperation(int startTime) {

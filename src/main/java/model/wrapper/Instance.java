@@ -9,8 +9,9 @@ public class Instance {
 
 	private List<Task> tasks;
 	private List<Maintenance> maintenances;
+	private int quality;
 
-	private int getInitialSchedulingTime = -1;
+	private int initialSchedulingTime = -1;
 
 	public Instance(List<Task> tasks, List<Maintenance> maintenances) {
 		this.tasks = tasks;
@@ -36,24 +37,26 @@ public class Instance {
 
 	public int getInitialSchedulingTime() {
 		setInitialSchedulingTime();
-		return getInitialSchedulingTime;
+		return initialSchedulingTime;
 	}
+
+	public void setInitialSchedulingTime(int schedulingTime) {
+		initialSchedulingTime = schedulingTime;
+	}
+
 	private void setInitialSchedulingTime() {
-		if (getInitialSchedulingTime == -1) {
-			getInitialSchedulingTime = getCurrentSchedulingTime();
+		if (initialSchedulingTime == -1) {
+			initialSchedulingTime = getCurrentSchedulingTime();
 		}
 	}
 
 	public int getCurrentSchedulingTime() {
-		int max = -1;
 		if (tasks != null) {
-			for (Task task : tasks) {
-				int maxFromTask = Math.max(task.getFirst().getEnd(), task.getSecond().getEnd());
-				if (max < maxFromTask)
-					max = maxFromTask;
-			}
+			return tasks.stream()
+					.mapToInt(t -> t.getFirst().getEnd() + t.getSecond().getEnd())
+					.sum();
 		}
-		return max;
+		return -1;
 	}
 
 	@Override
@@ -62,5 +65,13 @@ public class Instance {
 				"tasks=" + tasks +
 				", maintenances=" + maintenances +
 				'}';
+	}
+
+	public int getQuality() {
+		return quality;
+	}
+
+	public void setQuality(int quality) {
+		this.quality = quality;
 	}
 }

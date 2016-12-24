@@ -29,7 +29,7 @@ public class OperationsServiceTest {
 		maintenancesAmount = taskAmount / 4;
 		tasks = TaskService.generateTasks(taskAmount, longestTime);
 		int totalTime = TaskService.getTotalTasksDuration(tasks);
-		maintenances = MaintenanceService.generateMaintenances(totalTime, maintenancesAmount);
+		maintenances = MaintenanceService.generateMaintenances(totalTime, maintenancesAmount, longestTime);
 
 	}
 
@@ -44,7 +44,6 @@ public class OperationsServiceTest {
 
 	@Test
 	public void assignOperationsToMachines() throws Exception {
-		OperationsService.assignOperationsToMachines(tasks);
 		assertAll("operations assignment",
 				() -> assertTrue(tasks.parallelStream()
 						.allMatch(t -> t.getFirst().getMachine() != null && t.getSecond().getMachine() != null)),
@@ -58,7 +57,6 @@ public class OperationsServiceTest {
 
 	@Test
 	public void prepareMachineFirstOperations() throws Exception {
-		OperationsService.assignOperationsToMachines(tasks);
 		OperationsService.prepareFirstMachineOperations(tasks, maintenances);
 
 		assertAll("First machine operations",
@@ -72,14 +70,13 @@ public class OperationsServiceTest {
 			Task nextTask = tasks.get(i);
 			previous = Machine.ONE.equals(previousTask.getFirst().getMachine()) ? previousTask.getFirst() : previousTask.getSecond();
 			next = Machine.ONE.equals(nextTask.getFirst().getMachine()) ? nextTask.getFirst() : nextTask.getSecond();
-			assertTrue(previous.getEnd() < next.getBegin());
+			assertTrue(previous.getEnd() <= next.getBegin());
 		}
 
 	}
 
 	@Test
 	public void prepareSecondMachineOperations() {
-		OperationsService.assignOperationsToMachines(tasks);
 		OperationsService.prepareSecondMachineOperations(tasks);
 		assertAll("Second machine operations",
 				() -> assertTrue(tasks.stream().allMatch(t -> t.getFirst().getEnd() != 0 || t.getSecond().getEnd() != 0)),
@@ -94,7 +91,7 @@ public class OperationsServiceTest {
 					nextTask.getFirst() : nextTask.getSecond();
 			Operation machineOneNext = Machine.ONE.equals(nextTask.getFirst().getMachine()) ?
 					nextTask.getFirst() : nextTask.getSecond();
-			assertTrue(previous.getEnd() < next.getBegin() && machineOneNext.getEnd() < next.getBegin());
+			assertTrue(previous.getEnd() <= next.getBegin() && machineOneNext.getEnd() <= next.getBegin());
 		}
 	}
 }
