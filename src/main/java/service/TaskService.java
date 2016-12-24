@@ -24,20 +24,21 @@ public class TaskService {
 			throw new NonNegativeArgException("Task amount must be positive!");
 		}
 		Random random = new Random();
-		int maxReadyTime = (int)((amount * longestTime) * 0.2);
+		int maxReadyTime = (int) ((amount * longestTime) * 0.2);
 		List<Task> tasks = new ArrayList<>();
+		Task.resetIndexer();
 		for (int i = 0; i < amount; i++) {
-
 			int firstTaskDuration = random.nextInt((longestTime - 1)) + 1;
-			int readyTime = random.nextInt(maxReadyTime);
-			Operation first = new Operation(firstTaskDuration, readyTime);
+			int readyTime = random.nextBoolean() ? random.nextInt(maxReadyTime) : 0;
+			Operation first = Operation.createFirstMachineOperation(firstTaskDuration, readyTime);
 
 			int secondTimeDuration = random.nextInt((longestTime - 1)) + 1;
-			Operation second = new Operation(secondTimeDuration);
+			Operation second = Operation.createSecondMachineOperation(secondTimeDuration);
 
 			Task task = new Task(first, second);
 			tasks.add(task);
 		}
+		Task.resetIndexer();
 		return tasks;
 	}
 
@@ -60,8 +61,6 @@ public class TaskService {
 		List<Maintenance> machineFirstMaintenances = UtilsService.deepClone(maintenances);
 		List<Task> tasksCopy = UtilsService.deepClone(tasks);
 		Collections.shuffle(tasksCopy);
-		tasksCopy.sort(Comparator.comparingInt(a -> a.getFirst().getReadyTime()));
-		assignOperationsToMachines(tasksCopy);
 		prepareFirstMachineOperations(tasksCopy, machineFirstMaintenances);
 		prepareSecondMachineOperations(tasksCopy);
 

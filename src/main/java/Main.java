@@ -1,3 +1,4 @@
+import algorithm.AntColonyAlgorithm;
 import model.wrapper.Instance;
 import model.Maintenance;
 import model.Task;
@@ -5,6 +6,7 @@ import repository.InstanceRepository;
 import service.MaintenanceService;
 import service.SolutionService;
 import service.TaskService;
+import service.UtilsService;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -27,26 +29,43 @@ public class Main {
 				instance = useExistingInstancePath();
 				break;
 			}
-			default: throw new RuntimeException();
+			default:
+				throw new RuntimeException();
 		}
+		int iterations = 10000;
+		int antPopulation = 1000;
+		double evaporationRatio = 0.7;
+		int solutionPersistenceAmount = 5;
+
+		AntColonyAlgorithm antColonyAlgorithm = new AntColonyAlgorithm(iterations, antPopulation, evaporationRatio,
+				instance,
+				solutionPersistenceAmount);
+		Instance receivedInstance = antColonyAlgorithm.run();
+		UtilsService.printPrettyJson(receivedInstance);
+
 		List<Task> tasks = instance.getTasks();
 		List<Maintenance> maintenances = instance.getMaintenances();
+
+
 		AtomicInteger maintenanceLength = new AtomicInteger();
 		int sum = maintenances.stream().mapToInt(Maintenance::getDuration).sum();
-
+//
 		List<Task> taskList = TaskService.randomGenerator(maintenances, tasks);
 		instance.setTasks(taskList);
-		SolutionService.persistSolution(instance, "test");
+		System.out.println("random solution : " + instance.getCurrentSchedulingTime());
+//		SolutionService.persistSolution(receivedInstance, "test");
 //		UtilsService.printPrettyJson(taskList);
 	}
 
-	private static Instance newInstancePath() throws Exception{
+	private static Instance newInstancePath() throws Exception {
 		int longestTime = 100;
-		int taskAmount = 80;
+		int taskAmount = 100;
 		int maintenancesAmount = taskAmount / 4;
 		List<Task> tasks = TaskService.generateTasks(taskAmount, longestTime);
 		int totalTime = TaskService.getTotalTasksDuration(tasks);
-		List<Maintenance> maintenances = MaintenanceService.generateMaintenances(totalTime, maintenancesAmount);
+
+		List<Maintenance> maintenances = MaintenanceService
+				.generateMaintenances(totalTime, maintenancesAmount, longestTime);
 		Instance instance = new Instance(tasks, maintenances);
 		System.out.println("would you want to persist? [y/n]");
 		String persistAns = scanner.next();
@@ -62,7 +81,7 @@ public class Main {
 		return instance;
 	}
 
-	private static Instance useExistingInstancePath() throws Exception{
+	private static Instance useExistingInstancePath() throws Exception {
 		List<Path> paths = InstanceRepository.listAllInstances();
 		System.out.println("Please, select one of listed below files");
 		for (int i = 0; i < paths.size(); i++) {
@@ -71,7 +90,9 @@ public class Main {
 		int index = scanner.nextInt();
 		if (index >= 0 && index < paths.size()) {
 			return InstanceRepository.getInstance(paths.get(index));
-		} else throw new RuntimeException();
+		} else {
+			throw new RuntimeException();
+		}
 	}
 }
 //TODO upgrade tests

@@ -38,6 +38,10 @@ public class Task {
         this.second = second;
     }
 
+    public static void resetIndexer() {
+        indexer = 0;
+    }
+
     @Override
     public String toString() {
         return "Task{" +

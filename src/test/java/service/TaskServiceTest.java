@@ -66,7 +66,7 @@ public class TaskServiceTest {
 		List<Task> tasks = TaskService.generateTasks(amount, longestTime);
 		int totalTasksDuration = TaskService.getTotalTasksDuration(tasks);
 		List<Maintenance> maintenances = MaintenanceService.
-				generateMaintenances(totalTasksDuration, amount / 4);
+				generateMaintenances(totalTasksDuration, amount / 4, longestTime);
 		List<Task> randoms = TaskService.randomGenerator(maintenances, tasks);
 		assertAll("randomGeneratorTest",
 				() -> assertTrue(randoms.stream().allMatch(t -> t.getId() < amount)),
@@ -78,9 +78,9 @@ public class TaskServiceTest {
 		Operation first = task.getFirst();
 		Operation second = task.getSecond();
 		if (Machine.ONE.equals(first.getMachine())) {
-			return first.getEnd() < second.getBegin();
+			return first.getEnd() <= second.getBegin();
 		} else
-			return second.getEnd() < first.getBegin();
+			return second.getEnd() <= first.getBegin();
 	}
 
 

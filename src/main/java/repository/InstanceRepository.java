@@ -1,14 +1,12 @@
 package repository;
 
 import com.google.gson.Gson;
-import enumeration.Machine;
-import model.wrapper.Instance;
-import model.Operation;
+import com.sun.istack.internal.NotNull;
+import model.Maintenance;
 import model.Task;
-import model.abstracts.Event;
+import model.wrapper.Instance;
 import service.UtilsService;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -25,39 +23,77 @@ import java.util.stream.Stream;
 
 public class InstanceRepository {
 
-	private static String INSTANCES_DIRECTORY = "instances";
+	private static final String INSTANCES_JSON_DIRECTORY = "instances/json";
+	private static final String INSTANCES_READABLE_DIRECTORY = "instances/read";
+	private static final String INSTANCE_DEFAULT_ID_FORMAT = "{0}_T_{1}_M_{2}";
 
 	private InstanceRepository() {
 		throw new UnsupportedOperationException();
 	}
 
-	public static void persistInstance(Instance instance) throws IOException {
-		persistInstance(instance, null);
+
+	public static String persistInstance(Instance instance) throws IOException {
+		String fileName = getDefaultName(instance);
+		persistInstance(instance, fileName);
+		return fileName;
 	}
 
-	public static void persistInstance(Instance instance, String customName) throws IOException {
-		String instancePersistencePath = getInstancesDirectory();
-		if (customName != null) {
-			instancePersistencePath += customName;
-		} else {
-			int tasksSize = instance.getTasks().size();
-			int maintenancesSize = instance.getMaintenances().size();
-			LocalDate localDate = LocalDateTime.now().toLocalDate();
-			String fileName = MessageFormat.format("{0}_T_{1}_M_{2}", localDate, tasksSize, maintenancesSize);
-			instancePersistencePath += fileName;
-		}
+	public static void persistInstance(Instance instance, @NotNull String customName) throws IOException {
+		persistInstanceToJson(instance, customName);
+		persistInstanceToFormat(instance, customName);
+	}
+
+
+	public static void persistInstanceToJson(final Instance instance, final String fileName) throws IOException {
+		String instancePersistenceDirectory = getInstancesJsonDirectory();
+		String instancePersistencePath = getNewPersistenceFilePath(instancePersistenceDirectory, fileName);
 		try (FileOutputStream writer = new FileOutputStream(instancePersistencePath)) {
 			String jsonInstance = new Gson().toJson(instance);
 			writer.write(jsonInstance.getBytes());
-			writer.flush();
 		}
 	}
 
+	public static void persistInstanceToFormat(final Instance instance, final String fileName) throws IOException {
+		String instancePersistenceDirectory = getInstancesReadableDirectory();
+		String instancePersistencePath = getNewPersistenceFilePath(instancePersistenceDirectory, fileName);
+		try (FileOutputStream writer = new FileOutputStream(instancePersistencePath)) {
+			int tasksSize = instance.getTasks().size();
+			UtilsService
+					.writeAllLinesToFile(writer, "***** " + fileName + " *****", "tasks " + String.valueOf(tasksSize));
+			List<Task> tasks = instance.getTasks();
+			for (Task task : tasks) {
+				String line = task.getFirst().getDuration() + "; " + task.getSecond().getDuration() + "; " + task
+						.getFirst().getReadyTime() + ";";
+				UtilsService.writeLineToFile(writer, line);
+			}
+			List<Maintenance> maintenances = instance.getMaintenances();
+			UtilsService.writeLineToFile(writer, "maintenances " + maintenances.size());
+			int maintenanceNumber = 0;
+			for (Maintenance maintenance : maintenances) {
+				String line = ++maintenanceNumber + "; 1; " + maintenance.getDuration() + "; " + maintenance.getBegin();
+				UtilsService.writeLineToFile(writer, line);
+			}
+			UtilsService.writeLineToFile(writer, "***** EOF *****");
+
+		}
+	}
+
+	private static String getNewPersistenceFilePath(String directory, String customName) {
+		return directory + customName;
+	}
+
+	private static String getDefaultName(final Instance instance) {
+		int tasksSize = instance.getTasks().size();
+		int maintenancesSize = instance.getMaintenances().size();
+		LocalDate localDate = LocalDateTime.now().toLocalDate();
+		return MessageFormat.format(INSTANCE_DEFAULT_ID_FORMAT, localDate, tasksSize, maintenancesSize);
+	}
+
 	public static List<Path> listAllInstances() throws IOException {
-		String dir = getInstancesDirectory();
+		String dir = getInstancesJsonDirectory();
 		List<Path> paths = new ArrayList<>();
 		try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(dir))) {
-			for (Path entry: stream) {
+			for (Path entry : stream) {
 				paths.add(entry);
 			}
 		}
@@ -71,8 +107,12 @@ public class InstanceRepository {
 		}
 	}
 
-	private static String getInstancesDirectory() throws IOException {
-		return UtilsService.getDirectory(INSTANCES_DIRECTORY);
+	private static String getInstancesJsonDirectory() throws IOException {
+		return UtilsService.getDirectory(INSTANCES_JSON_DIRECTORY);
+	}
+
+	private static String getInstancesReadableDirectory() throws IOException {
+		return UtilsService.getDirectory(INSTANCES_READABLE_DIRECTORY);
 	}
 
 }

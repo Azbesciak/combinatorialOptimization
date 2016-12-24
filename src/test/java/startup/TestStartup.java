@@ -16,7 +16,7 @@ public class TestStartup {
 		int maintenancesAmount = taskAmount / 4;
 		List<Task> tasks = TaskService.generateTasks(taskAmount, longestTime);
 		int totalTime = TaskService.getTotalTasksDuration(tasks);
-		List<Maintenance> maintenances = MaintenanceService.generateMaintenances(totalTime, maintenancesAmount);
+		List<Maintenance> maintenances = MaintenanceService.generateMaintenances(totalTime, maintenancesAmount, 100);
 		return new Instance(tasks, maintenances);
 	}
 }

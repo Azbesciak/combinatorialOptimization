@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static service.UtilsService.writeLineToFile;
+import static service.UtilsService.writeAllLinesToFile;
 
 public class SolutionService {
 
@@ -44,16 +44,16 @@ public class SolutionService {
 		String machineTwoIdle = prepareIdleLineForMachine(machineTwoEvents);
 		String solutionFile = getSolutionsDirectory() + persistenceId;
 		try (FileOutputStream writer = new FileOutputStream(solutionFile)) {
-			writeLineToFile(writer, "***** " + persistenceId + " *****");
-			writeLineToFile(writer, schedulingTime);
-			writeLineToFile(writer, machineOneSB.toString());
-			writeLineToFile(writer, machineTwoSB.toString());
-			writeLineToFile(writer, maintenancesLine);
-			writeLineToFile(writer, "0");
-			writeLineToFile(writer, machineOneIdle);
-			writeLineToFile(writer, machineTwoIdle);
-			writeLineToFile(writer, "*** EOF ***");
-			writer.flush();
+			writeAllLinesToFile(writer,
+					"***** " + persistenceId + " *****",
+					schedulingTime,
+					machineOneSB.toString(),
+					machineTwoSB.toString(),
+					maintenancesLine,
+					"0",
+					machineOneIdle,
+					machineTwoIdle,
+					"*** EOF ***");
 		}
 	}
 
@@ -69,6 +69,7 @@ public class SolutionService {
 		int maintenancesTotalDuration = maintenances.stream().mapToInt(Event::getDuration).sum();
 		return maintenancesAmount + ", " + maintenancesTotalDuration;
 	}
+
 	private static String prepareIdleLineForMachine(List<TimeLineEvent> machineEvents) {
 		int idleCounter = 0;
 		int idleTotalTime = 0;
@@ -113,7 +114,7 @@ public class SolutionService {
 			while (nextMaintenance != null && nextMaintenance.getBegin() < currentOperation.getBegin()) {
 				if (!maintenanceOccurredBeforeOperation && recentOperation != null) {
 					idleCounter = checkIdleExistence(events, recentOperation, nextMaintenance, idleCounter);
-				} else if (maintenanceOccurredBeforeOperation){
+				} else if (maintenanceOccurredBeforeOperation) {
 					idleCounter = checkIdleExistence(events, recentMaintenance, nextMaintenance, idleCounter);
 				}
 				maintenanceOccurredBeforeOperation = true;
@@ -129,6 +130,8 @@ public class SolutionService {
 			}
 			if (recentMaintenance != null && maintenanceOccurredBeforeOperation) {
 				idleCounter = checkIdleExistence(events, recentMaintenance, currentOperation, idleCounter);
+			} else if (recentOperation != null) {//due to readyTime
+				idleCounter = checkIdleExistence(events, recentOperation, currentOperation, idleCounter);
 			}
 			TimeLineEvent timeLineEvent = new TimeLineEvent(currentOperation, EventType.OPERATION, operationNumber,
 					task.getId());
@@ -140,14 +143,15 @@ public class SolutionService {
 
 	private static int checkInitialIdleness(List<TimeLineEvent> events, Maintenance firstMaintenance,
 											Operation firstOperation) {
+		int idleBegin = -1;
 		if (firstMaintenance != null && firstMaintenance.getBegin() < firstOperation.getBegin()) {
-			TimeLineEvent timeLineEvent =
-					new TimeLineEvent(0, firstMaintenance.getBegin(), EventType.IDLE, 0);
-			events.add(timeLineEvent);
-			return 1;
+			idleBegin = firstMaintenance.getBegin();
 		} else if (firstOperation.getBegin() > 0) {
+			idleBegin = firstOperation.getBegin();
+		}
+		if (idleBegin >= 0) {
 			TimeLineEvent timeLineEvent =
-					new TimeLineEvent(0, firstOperation.getBegin(), EventType.IDLE, 0);
+					new TimeLineEvent(0, idleBegin, EventType.IDLE, 0);
 			events.add(timeLineEvent);
 			return 1;
 		}
