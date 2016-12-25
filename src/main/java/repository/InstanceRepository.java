@@ -25,7 +25,7 @@ public class InstanceRepository {
 
 	private static final String INSTANCES_JSON_DIRECTORY = "instances/json";
 	private static final String INSTANCES_READABLE_DIRECTORY = "instances/read";
-	private static final String INSTANCE_DEFAULT_ID_FORMAT = "{0}_T_{1}_M_{2}";
+	private static final String INSTANCE_DEFAULT_ID_FORMAT = "{0}_T{1}_M{2}";
 
 	private InstanceRepository() {
 		throw new UnsupportedOperationException();
@@ -56,6 +56,7 @@ public class InstanceRepository {
 	public static void persistInstanceToFormat(final Instance instance, final String fileName) throws IOException {
 		String instancePersistenceDirectory = getInstancesReadableDirectory();
 		String instancePersistencePath = getNewPersistenceFilePath(instancePersistenceDirectory, fileName);
+		instancePersistencePath += ".txt";
 		try (FileOutputStream writer = new FileOutputStream(instancePersistencePath)) {
 			int tasksSize = instance.getTasks().size();
 			UtilsService

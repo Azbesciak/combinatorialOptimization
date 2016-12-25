@@ -10,7 +10,6 @@ public class Instance {
 	private List<Task> tasks;
 	private List<Maintenance> maintenances;
 	private int quality;
-
 	private int initialSchedulingTime = -1;
 
 	public Instance(List<Task> tasks, List<Maintenance> maintenances) {

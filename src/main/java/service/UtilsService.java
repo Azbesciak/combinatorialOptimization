@@ -7,6 +7,12 @@ import com.rits.cloning.Cloner;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class UtilsService {
@@ -27,7 +33,7 @@ public class UtilsService {
 	public static String getDirectory(String name) throws IOException {
 		File directory = new File("." + File.separator + name);
 		if (!directory.isDirectory()) {
-			if (!directory.mkdir()) throw new IOException();
+			if (!directory.mkdirs()) throw new IOException();
 		}
 		String persistencePath = directory.getCanonicalPath();
 		persistencePath += File.separatorChar;
@@ -36,18 +42,31 @@ public class UtilsService {
 	}
 
 	public static void writeLineToFile(FileOutputStream writer, String line) throws IOException {
-		line += '\n';
+		line += System.lineSeparator();
 		writer.write(line.getBytes());
 	}
 
 	public static boolean writeAllLinesToFile(FileOutputStream writer, String... lines) throws IOException {
 		if (lines != null) {
 			for (String line : lines) {
-				line += '\n';
+
+				line += System.lineSeparator();
 				writer.write(line.getBytes());
 			}
 			return true;
 		}
 		return false;
+	}
+
+	public static List<Path> getAllFilesInDirectoryByName(String dir, String name) throws IOException {
+		List<Path> paths = new ArrayList<>();
+		try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(dir))) {
+			for (Path entry : stream) {
+				if (entry.getFileName().toString().contains(name)) {
+					paths.add(entry);
+				}
+			}
+		}
+		return paths;
 	}
 }

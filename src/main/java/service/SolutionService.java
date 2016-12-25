@@ -11,17 +11,41 @@ import model.wrapper.TimeLineEvent;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static service.UtilsService.writeAllLinesToFile;
 
 public class SolutionService {
 
 	private static final String SOLUTIONS_DIRECTORY = "solutions";
+	private static final String AUTO_RESULTS_SOLUTIONS_DIRECTORY = "autoResults";
 
 	private SolutionService() {
+	}
+
+	public static void persistSolutionsResults(List<Future<String>> futures) throws Exception {
+		String solutionsDirectory = getAutoResultsSolutionsDirectory();
+		String localDate = LocalDateTime.now().toLocalDate().toString();
+		String solutionFile = solutionsDirectory + localDate;
+		int filesWithSameName = UtilsService.getAllFilesInDirectoryByName(solutionsDirectory, localDate).size();
+		if (filesWithSameName > 0) {
+			solutionFile += "(" + filesWithSameName + ")";
+		}
+		solutionFile += ".txt";
+		try (FileOutputStream writer = new FileOutputStream(solutionFile)) {
+			for (Future<String> future : futures) {
+				System.out.println("COS...");
+				UtilsService.writeLineToFile(writer, future.get());
+			}
+		}
 	}
 
 	public static void persistSolution(Instance instance, String persistenceId) throws IOException {
@@ -42,7 +66,13 @@ public class SolutionService {
 		String maintenancesLine = prepareMaintenancesLine(instance);
 		String machineOneIdle = prepareIdleLineForMachine(machineOneEvents);
 		String machineTwoIdle = prepareIdleLineForMachine(machineTwoEvents);
-		String solutionFile = getSolutionsDirectory() + persistenceId;
+		String solutionsDirectory = getSolutionsDirectory();
+		String solutionFile = solutionsDirectory + persistenceId;
+		int filesWithSameName = UtilsService.getAllFilesInDirectoryByName(solutionsDirectory, persistenceId).size();
+		if (filesWithSameName > 0) {
+			solutionFile += "(" + filesWithSameName + ")";
+		}
+		solutionFile += ".txt";
 		try (FileOutputStream writer = new FileOutputStream(solutionFile)) {
 			writeAllLinesToFile(writer,
 					"***** " + persistenceId + " *****",
@@ -59,7 +89,7 @@ public class SolutionService {
 
 	private static String getSchedulingTime(Instance instance) {
 		int initialSchedulingTime = instance.getInitialSchedulingTime();
-		int currentSchedulingTime = instance.getCurrentSchedulingTime();
+		int currentSchedulingTime = instance.getQuality();
 		return initialSchedulingTime + ", " + currentSchedulingTime;
 	}
 
@@ -73,7 +103,6 @@ public class SolutionService {
 	private static String prepareIdleLineForMachine(List<TimeLineEvent> machineEvents) {
 		int idleCounter = 0;
 		int idleTotalTime = 0;
-		System.out.println("machine events size : " + machineEvents.size());
 		for (TimeLineEvent machineEvent : machineEvents) {
 			if (EventType.IDLE.equals(machineEvent.getEventType())) {
 				idleCounter++;
@@ -170,5 +199,9 @@ public class SolutionService {
 
 	private static String getSolutionsDirectory() throws IOException {
 		return UtilsService.getDirectory(SOLUTIONS_DIRECTORY);
+	}
+
+	private static String getAutoResultsSolutionsDirectory() throws IOException {
+		return UtilsService.getDirectory(AUTO_RESULTS_SOLUTIONS_DIRECTORY);
 	}
 }

@@ -4,5 +4,6 @@ build/
 .gradle/
 instances/
 solutions/
+autoResults/
 src/main/resources/
 src/test/resources/

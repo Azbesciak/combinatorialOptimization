@@ -30,7 +30,6 @@ public class Ant {
 		Instance instance = InstanceService.prepareInstance(this.path, maintenances);
 		this.pathLength = countPathLength();
 		instance.setQuality(pathLength);
-		instance.getTasks().sort(Comparator.comparingInt(t -> t.getFirst().getBegin()));
 		return instance;
 	}
 
@@ -53,7 +52,7 @@ public class Ant {
 		Random randomGenerator = new Random();
 		List<Double> entryPoints = matrix.getEntryPoints();
 		Double probabilitySum = entryPoints.stream().reduce(0.0, Double::sum);
-		int randomizedEntry = randomGenerator.nextInt(probabilitySum.intValue());
+		double randomizedEntry = randomGenerator.nextDouble() * probabilitySum;
 		double currentScope = 0;
 		int currentPosition = -1;
 		for (int entryPointIndex = 0; entryPointIndex < entryPoints.size(); entryPointIndex++) {
@@ -72,7 +71,7 @@ public class Ant {
 			possibleWays.keySet().removeAll(visited);
 
 			double pheromonesSum = possibleWays.values().stream().mapToDouble(Double::doubleValue).sum();
-			int nextMovePossibilityScope = randomGenerator.nextInt((int) pheromonesSum);
+			double nextMovePossibilityScope = randomGenerator.nextDouble() * pheromonesSum;
 
 			currentScope = 0;
 			for (Integer possibleMove : possibleWays.keySet()) {
@@ -85,8 +84,6 @@ public class Ant {
 				}
 			}
 		}
-
-
 		return newPath;
 	}
 
