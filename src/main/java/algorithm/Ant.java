@@ -26,8 +26,9 @@ public class Ant {
 
 	public Instance prepareAntPath(double independenceRatio, final List<Task> tasks, List<Maintenance> maintenances,
 								   PheromoneMatrix matrix) {
-		this.path = findAWay(independenceRatio, tasks, matrix);
-		Instance instance = InstanceService.prepareInstance(this.path, maintenances);
+		List<Task> way = findAWay(independenceRatio, tasks, matrix);
+		Instance instance = InstanceService.prepareInstance(way, maintenances);
+		this.path = instance.getTasks();
 		this.pathLength = countPathLength();
 		instance.setQuality(pathLength);
 		return instance;

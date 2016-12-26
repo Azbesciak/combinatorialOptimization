@@ -10,15 +10,10 @@ import service.UtilsService;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.stream.IntStream;
+import java.util.concurrent.*;
 
 public class Main {
 	private static Scanner scanner = new Scanner(System.in);
@@ -105,22 +100,24 @@ public class Main {
 
 	private static void automatic(String prefix, final Instance instance) throws Exception {
 		ExecutorService executorService = Executors.newWorkStealingPool();
-		List<Callable<String>> callables = new ArrayList<>(625);
-		for (int i = 0; i < 3; i++) {
+		List<Callable<Object>> callables = new ArrayList<>(625);
+		ConcurrentLinkedQueue<String> results = new ConcurrentLinkedQueue<>();
+		for (int i = 0; i < 625; i++) {
 			final int iteration = i;
-			callables.add(() -> makeSolution(iteration, prefix, instance));
+			callables.add(() -> makeSolution(iteration, prefix, instance, results));
 		}
 		long start = System.currentTimeMillis();
-		List<Future<String>> futures = executorService.invokeAll(callables);
+		executorService.invokeAll(callables);
 
 		long end = System.currentTimeMillis();
-		SolutionService.persistSolutionsResults(futures);
+		SolutionService.persistSolutionsResults(results);
 
-		System.out.println("TOTAL TIME : " + new SimpleDateFormat("mm,ss").format((end - start) / (60.0 * 1000)) + " min");
+		System.out.println("TOTAL TIME : " + ((end - start) / (60.0 * 1000)) + " min");
 	}
 
-	private static String makeSolution(int iteration, String prefix, Instance instance) throws IOException {
-		if ("null".equals(prefix)) {
+	private static Object makeSolution(int iteration, String prefix, Instance instance,
+									   ConcurrentLinkedQueue<String> queue) throws IOException {
+		if ("0".equals(prefix)) {
 			prefix = "AUTO_";
 		}
 		int iterations = getIterationsAmount(iteration);
@@ -131,9 +128,9 @@ public class Main {
 		AntColonyAlgorithm antColonyAlgorithm = new AntColonyAlgorithm(iterations, antPopulation, evaporationRatio,
 				instance,
 				solutionPersistenceAmount);
-		Instance result = antColonyAlgorithm.run();
+		Instance result = antColonyAlgorithm.run(true);
 		long end = System.currentTimeMillis();
-		String instanceParams = "T" + instance.getTasks().size() + "_Ma" + instance.getMaintenances().size();
+		String instanceParams = "T" + instance.getTasks().size() + "_M" + instance.getMaintenances().size();
 		String customName = prefix + instanceParams + "_It" + iterations + "_An" +
 				antPopulation + "_Ev" + evaporationRatio + "_Sp" + solutionPersistenceAmount;
 		System.out.println(customName + " : " + (end - start) / 1000.0 + " sec");
@@ -141,8 +138,10 @@ public class Main {
 
 		int initialSchedulingTime = result.getInitialSchedulingTime();
 		int quality = result.getQuality();
-		return customName + " start:" + initialSchedulingTime + ", end:" +
+		String toWrite = customName + " start:" + initialSchedulingTime + ", end:" +
 				quality + " improved by: " + (100.0 * (1 - quality / (double) initialSchedulingTime)) + "%";
+		queue.add(toWrite);
+		return null;
 	}
 
 	private static int getIterationsAmount(int iteration) {
@@ -217,17 +216,28 @@ public class Main {
 		amount = scanner.nextInt();
 		int solutionPersistenceAmount = amount == 0 ? 5 : amount;
 
+		System.out.println("Smart? [y/n]");
+		boolean isSmart = "Y".equalsIgnoreCase(scanner.next());
+
+		System.out.println("Pass a prefix (0 - none)");
+		String prefix = scanner.next();
+		if ("0".equals(prefix)) {
+			prefix = "";
+		} else {
+			prefix += "_";
+		}
 		long start = System.currentTimeMillis();
 		AntColonyAlgorithm antColonyAlgorithm = new AntColonyAlgorithm(iterations, antPopulation, evaporationRatio,
 				instance,
 				solutionPersistenceAmount);
-		Instance receivedInstance = antColonyAlgorithm.run();
+		Instance receivedInstance = antColonyAlgorithm.run(isSmart);
 		long end = System.currentTimeMillis();
 		UtilsService.printPrettyJson(receivedInstance);
 
 		String instanceParams = "T" + receivedInstance.getTasks().size() + "_M" + receivedInstance.getMaintenances()
 				.size();
-		String customName = instanceParams + "_It" + iterations + "_An" + antPopulation + "_Ev" + evaporationRatio + "_Sp" + solutionPersistenceAmount;
+		String customName = prefix + instanceParams + "_It" + iterations + "_An" +
+				antPopulation + "_Ev" + evaporationRatio + "_Sp" + solutionPersistenceAmount;
 		System.out.println("\n" + customName + " : " + (end - start) / 1000.0 + " sec");
 		SolutionService.persistSolution(receivedInstance, customName);
 	}

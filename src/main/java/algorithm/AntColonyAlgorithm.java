@@ -1,5 +1,6 @@
 package algorithm;
 
+import model.Task;
 import model.wrapper.Instance;
 
 import java.util.*;
@@ -22,34 +23,82 @@ public class AntColonyAlgorithm {
 		this.pheromoneMatrix = new PheromoneMatrix(instance.getTasks().size(), evaporationRatio);
 	}
 
-	public Instance run() {
-		Instance bestPath = makeIteration(0);
+	public Instance run(boolean isSmart) {
+		Instance bestPath = makeSimpleIteration(0);
 		int initialSchedulingTime = bestPath.getQuality();
-
-		for (int iteration = 1; iteration < iterations; iteration++) {
-			Instance result = makeIteration(iteration);
-			if (result.getQuality() < bestPath.getQuality()) {
-				bestPath = result;
+		if (isSmart) {
+			for (int iteration = 1; iteration < iterations; iteration++) {
+				Instance result = makeSmartIteration(iteration, iterations, bestPath);
+				if (result.getQuality() < bestPath.getQuality()) {
+					bestPath = result;
+				}
+			}
+		} else {
+			for (int iteration = 1; iteration < iterations; iteration++) {
+				Instance result = makeSimpleIteration(iteration);
+				if (result.getQuality() < bestPath.getQuality()) {
+					bestPath = result;
+				}
 			}
 		}
+
 		bestPath.setInitialSchedulingTime(initialSchedulingTime);
-		bestPath.getTasks().sort(Comparator.comparing(t -> t.getFirst().getBegin()));
+		Collections.sort(bestPath.getTasks());
 		return bestPath;
 	}
 
-	private Instance makeIteration(int iterationNumber) {
+	private Instance makeSmartIteration(int iterationNumber, int totalIterations, Instance bestResult) {
+		int multiplicationOfFifty = (iterationNumber + 1) % 100;
+		double independenceRatio = getSmartIndependenceRatio(multiplicationOfFifty);
+		boolean isMultiplicationOfFifty = multiplicationOfFifty == 0;
+		Map<Integer, Instance> results = searchForSolution(independenceRatio);
+
+		boolean shouldResetMatrix = isMultiplicationOfFifty && iterationNumber < totalIterations - 1;
+		Instance instance = persistBestOnesAndReturnFirst(results, shouldResetMatrix);
+		if (shouldResetMatrix && instance.getQuality() > bestResult.getQuality()) {
+			pheromoneMatrix.updateMatrix(bestResult.getTasks(), solutionPersistenceAmount);
+		}
+		return instance;
+	}
+
+	private double getSmartIndependenceRatio(int condition) {
+		if (condition < 25) {
+			return 100;
+		} else if (condition < 70) {
+			return 20;
+		} else {
+			return 0;
+		}
+	}
+
+	private Instance makeSimpleIteration(int iterationNumber) {
 		double independenceRatio = 100 * (1 - iterationNumber / (double) iterations);
+		Map<Integer, Instance> results = searchForSolution(independenceRatio);
+		return persistBestOnesAndReturnFirst(results, false);
+	}
+
+	private Map<Integer, Instance> searchForSolution(double independenceRatio) {
 		Map<Integer, Instance> results = new HashMap<>(antPopulation);
 		for (int i = 0; i < antPopulation; i++) {
 			Instance result = expeditionsAntOnAJourney(independenceRatio);
 			results.put(i, result);
 		}
-		List<Instance> firstFivePaths = results.values().stream()
+		return results;
+	}
+
+	private Instance persistBestOnesAndReturnFirst(Map<Integer, Instance> results, boolean shouldResetMatrix) {
+		List<Instance> toPersist = results.values().stream()
 				.sorted(Comparator.comparingInt(Instance::getQuality)).limit(solutionPersistenceAmount)
 				.collect(Collectors.toList());
-		firstFivePaths.forEach(t -> pheromoneMatrix.updateMatrix(t.getTasks()));
+		if (shouldResetMatrix) {
+			pheromoneMatrix.resetMatrix();
+		}
+		for (int index = 0; index < solutionPersistenceAmount; index++) {
+			List<Task> tasks = toPersist.get(index).getTasks();
+			pheromoneMatrix.updateMatrix(tasks, solutionPersistenceAmount - index);
+		}
 
-		Instance bestResult = firstFivePaths.get(0);
+		Instance bestResult = toPersist.get(0);
 		pheromoneMatrix.evaporateMatrix();
 
 		return bestResult;

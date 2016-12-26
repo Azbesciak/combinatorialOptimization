@@ -1,6 +1,6 @@
 package model;
 
-public class Task {
+public class Task implements Comparable<Task>{
 
     private static int indexer = 0;
 
@@ -48,5 +48,10 @@ public class Task {
                 "first=" + first +
                 ", second=" + second +
                 '}';
+    }
+
+    @Override
+    public int compareTo(Task o) {
+        return Integer.compare(this.getFirst().getBegin(), o.getFirst().getBegin());
     }
 }

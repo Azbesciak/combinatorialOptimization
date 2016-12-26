@@ -13,9 +13,10 @@ public class InstanceService {
 	}
 
 	public static Instance prepareInstance(List<Task> tasks, List<Maintenance> maintenances) {
-		OperationsService.prepareFirstMachineOperations(tasks, maintenances);
-		OperationsService.prepareSecondMachineOperations(tasks);
-		return new Instance(tasks, maintenances);
+		List<Task> temp = UtilsService.deepClone(tasks);
+		OperationsService.prepareFirstMachineOperations(temp, maintenances);
+		OperationsService.prepareSecondMachineOperations(temp);
+		return new Instance(temp, maintenances);
 	}
 
 }

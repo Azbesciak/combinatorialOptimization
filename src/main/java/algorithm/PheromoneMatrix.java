@@ -11,9 +11,10 @@ public class PheromoneMatrix {
 	private List<Map<Integer, Double>> pheromonesPath;
 	private List<Double> entryPoints;
 	private double evaporationRatio;
+	private final static double INITIAL_VALUE = 0.1;
 
 	public PheromoneMatrix(int size, double evaporationRatio) {
-		this(size, evaporationRatio, 1.0);
+		this(size, evaporationRatio, INITIAL_VALUE);
 	}
 
 	private PheromoneMatrix(int size, double evaporationRatio, double initialValue) {
@@ -37,6 +38,16 @@ public class PheromoneMatrix {
 			pheromonesPath.add(pheromonesOnPath);
 		}
 	}
+	public void resetMatrix() {
+		for (int columnNumber = 0; columnNumber < pheromonesPath.size(); columnNumber++) {
+			Map<Integer, Double> column = pheromonesPath.get(columnNumber);
+			for (Integer rowNumber : column.keySet()) {
+
+				column.replace(rowNumber, INITIAL_VALUE);
+			}
+			entryPoints.set(columnNumber, INITIAL_VALUE);
+		}
+	}
 
 	public void evaporateMatrix() {
 		for (int columnNumber = 0; columnNumber < pheromonesPath.size(); columnNumber++) {
@@ -51,15 +62,15 @@ public class PheromoneMatrix {
 		}
 	}
 
-	public void updateMatrix(List<Task> tasks) {
+	public void updateMatrix(List<Task> tasks, int multiplier) {
 		int entryId = tasks.get(0).getId();
 		Double currentEntryPointPheromoneValue = entryPoints.get(entryId);
-		entryPoints.set(entryId, currentEntryPointPheromoneValue + 1);
+		entryPoints.set(entryId, currentEntryPointPheromoneValue + multiplier);
 		for (int number = 0; number < tasks.size() - 1; number++) {
 			Map<Integer, Double> currentPosition = pheromonesPath.get(number);
 			int nextTaskId = tasks.get(number + 1).getId();
 			Double nextIdPheromoneValue = currentPosition.get(nextTaskId);
-			currentPosition.replace(nextTaskId, nextIdPheromoneValue + 1);
+			currentPosition.replace(nextTaskId, nextIdPheromoneValue + multiplier);
 		}
 	}
 

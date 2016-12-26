@@ -47,8 +47,12 @@ public class AntTest {
 
 		Instance instance = ant.prepareAntPath(0, newTasks, maintenances, pheromoneMatrix);
 		pheromoneMatrix.updateMatrix(instance.getTasks());
-
-		assertAll("Ant Known Path", () -> assertTrue(ant.getPath().equals(newTasks)));
+		int allEndsSum = instance.getTasks().stream().mapToInt(t -> t.getFirst().getEnd() + t.getSecond().getEnd())
+				.sum();
+		assertAll("Ant Known Path", () -> assertTrue(ant.getPathLength() == allEndsSum),
+				() -> assertTrue(allEndsSum > 0),
+				() -> assertTrue(ant.getPath().size() == amount),
+				() -> assertTrue(ant.getPath().stream().filter(t -> t.getFirst().getBegin() == 0).count() <= 1));
 	}
 
 	private List<Task> prepareTestTasks(int amount, int maxDuration) {
