@@ -2,99 +2,83 @@ package algorithm;
 
 import model.Task;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PheromoneMatrix {
-	private List<Map<Integer, Double>> pheromonesPath;
-	private List<Double> entryPoints;
 	private double evaporationRatio;
-	private final static double INITIAL_VALUE = 0.1;
+	private double[][] pheromonesPath;
+	private double[] entryPoints;
+	private final double INITIAL_VALUE;
+	private final double MAX_VALUE;
+	private final double MIN_VALUE;
+	private final double INCREMENT_VALUE;
+
+
+//	public PheromoneMatrix(int size, double evaporationRatio) {
+//		this(size, evaporationRatio, INITIAL_VALUE);
+//	}
 
 	public PheromoneMatrix(int size, double evaporationRatio) {
-		this(size, evaporationRatio, INITIAL_VALUE);
-	}
-
-	private PheromoneMatrix(int size, double evaporationRatio, double initialValue) {
 		this.evaporationRatio = evaporationRatio;
-		this.pheromonesPath = new ArrayList<>(size);
-		this.entryPoints = new ArrayList<>(size);
-		initializeMatrix(size, initialValue);
+		this.pheromonesPath = new double[size][size];
+		this.entryPoints = new double[size];
+		MAX_VALUE = size / 10.0;
+		INCREMENT_VALUE = size / 100.0;
+		INITIAL_VALUE = size / 1000.0;
+		MIN_VALUE = size / 2000.0;
+		initializeMatrix(INITIAL_VALUE);
 	}
 
-	public static PheromoneMatrix prepareTestMatrixWithZeros(int size, double evaporationRatio) {
-		return new PheromoneMatrix(size, evaporationRatio, 0.0);
-	}
+//	public static PheromoneMatrix prepareTestMatrixWithZeros(int size, double evaporationRatio) {
+//		return new PheromoneMatrix(size, evaporationRatio, 0.0);
+//	}
 
-	private void initializeMatrix(int size, double initialValue) {
-		for (int column = 0; column < size; column++) {
-			entryPoints.add(initialValue);
-			Map<Integer, Double> pheromonesOnPath = new HashMap<>();
-			for (int row = 0; row < size; row++) {
-				pheromonesOnPath.put(row, initialValue);
+	private void initializeMatrix(double initialValue) {
+		for (int column = 0; column < pheromonesPath.length; column++) {
+			entryPoints[column] = initialValue;
+			for (int row = 0; row < pheromonesPath.length; row++) {
+				pheromonesPath[column][row] = initialValue;
 			}
-			pheromonesPath.add(pheromonesOnPath);
 		}
 	}
+
 	public void resetMatrix() {
-		for (int columnNumber = 0; columnNumber < pheromonesPath.size(); columnNumber++) {
-			Map<Integer, Double> column = pheromonesPath.get(columnNumber);
-			for (Integer rowNumber : column.keySet()) {
-
-				column.replace(rowNumber, INITIAL_VALUE);
-			}
-			entryPoints.set(columnNumber, INITIAL_VALUE);
-		}
+		initializeMatrix(INITIAL_VALUE);
 	}
 
 	public void evaporateMatrix() {
-		for (int columnNumber = 0; columnNumber < pheromonesPath.size(); columnNumber++) {
-			Map<Integer, Double> column = pheromonesPath.get(columnNumber);
-			for (Integer rowNumber : column.keySet()) {
-				Double currentValue = column.get(rowNumber);
-				column.replace(rowNumber, currentValue * evaporationRatio);
+		for (int columnNumber = 0; columnNumber < pheromonesPath.length; columnNumber++) {
+			entryPoints[columnNumber] = Math.max(MIN_VALUE, entryPoints[columnNumber] * evaporationRatio);
+			for (int rowNumber = 0; rowNumber < pheromonesPath.length; rowNumber++) {
+				pheromonesPath[columnNumber][rowNumber] = Math
+						.max(MIN_VALUE, pheromonesPath[columnNumber][rowNumber] * evaporationRatio);
 			}
-
-			Double aDouble = entryPoints.get(columnNumber);
-			entryPoints.set(columnNumber, aDouble * evaporationRatio);
 		}
 	}
 
 	public void updateMatrix(List<Task> tasks, int multiplier) {
 		int entryId = tasks.get(0).getId();
-		Double currentEntryPointPheromoneValue = entryPoints.get(entryId);
-		entryPoints.set(entryId, currentEntryPointPheromoneValue + multiplier);
+		entryPoints[entryId] = Math.min(multiplier * entryPoints[entryId] * INCREMENT_VALUE, MAX_VALUE);
 		for (int number = 0; number < tasks.size() - 1; number++) {
-			Map<Integer, Double> currentPosition = pheromonesPath.get(number);
 			int nextTaskId = tasks.get(number + 1).getId();
-			Double nextIdPheromoneValue = currentPosition.get(nextTaskId);
-			currentPosition.replace(nextTaskId, nextIdPheromoneValue + multiplier);
+			pheromonesPath[number][nextTaskId] = Math
+					.min(multiplier * pheromonesPath[number][nextTaskId] * INCREMENT_VALUE, MAX_VALUE);
 		}
 	}
 
-	public List<Map<Integer, Double>> getPheromonesPath() {
+	public double[][] getPheromonesPath() {
 		return pheromonesPath;
 	}
 
-	public void setPheromonesPath(List<Map<Integer, Double>> pheromonesPath) {
-		this.pheromonesPath = pheromonesPath;
-	}
-
-	public List<Double> getEntryPoints() {
+	public double[] getEntryPoints() {
 		return entryPoints;
-	}
-
-	public void setEntryPoints(List<Double> entryPoints) {
-		this.entryPoints = entryPoints;
 	}
 
 	@Override
 	public String toString() {
 		return "PheromoneMatrix{" +
-				"pheromonesPath=" + pheromonesPath +
-				", entryPoints=" + entryPoints +
+				"pheromonesPath=" + Arrays.deepToString(pheromonesPath) +
+				", entryPoints=" + Arrays.toString(entryPoints) +
 				", evaporationRatio=" + evaporationRatio +
 				'}';
 	}

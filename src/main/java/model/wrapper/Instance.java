@@ -5,7 +5,7 @@ import model.Task;
 
 import java.util.List;
 
-public class Instance {
+public class Instance implements Comparable<Instance>{
 
 	private List<Task> tasks;
 	private List<Maintenance> maintenances;
@@ -72,5 +72,25 @@ public class Instance {
 
 	public void setQuality(int quality) {
 		this.quality = quality;
+	}
+
+	@Override
+	public int compareTo(Instance other) {
+		return Integer.compare(this.quality, other.quality);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		Instance instance = (Instance) o;
+
+		return quality == instance.quality;
+	}
+
+	@Override
+	public int hashCode() {
+		return quality;
 	}
 }

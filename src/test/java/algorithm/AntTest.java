@@ -26,10 +26,10 @@ public class AntTest {
 
 		int allEndsSum = instance.getTasks().stream().mapToInt(t -> t.getFirst().getEnd() + t.getSecond().getEnd())
 				.sum();
-		assertAll("AntTest", () -> assertTrue(ant.getPathLength() == allEndsSum),
+		assertAll("AntTest", () -> assertTrue(instance.getQuality() == allEndsSum),
 				() -> assertTrue(allEndsSum > 0),
-				() -> assertTrue(ant.getPath().size() == amount),
-				() -> assertTrue(ant.getPath().stream().filter(t -> t.getFirst().getBegin() == 0).count() <= 1));
+				() -> assertTrue(instance.getTasks().size() == amount),
+				() -> assertTrue(instance.getTasks().stream().filter(t -> t.getFirst().getBegin() == 0).count() <= 1));
 	}
 
 	@Test
@@ -39,20 +39,20 @@ public class AntTest {
 		int maxDuration = 10;
 		double evaporationRatio = 0.8;
 
-		PheromoneMatrix pheromoneMatrix = PheromoneMatrix.prepareTestMatrixWithZeros(amount, evaporationRatio);
+		PheromoneMatrix pheromoneMatrix = new PheromoneMatrix(amount, evaporationRatio);
 		List<Maintenance> maintenances = MaintenanceService.generateMaintenances(50, 5, 20);
 		List<Task> tasksForMatrix = prepareTestTasks(amount, maxDuration);
-		pheromoneMatrix.updateMatrix(tasksForMatrix);
+		pheromoneMatrix.updateMatrix(tasksForMatrix, 1);
 		List<Task> newTasks = prepareTestTasks(amount, maxDuration);
 
 		Instance instance = ant.prepareAntPath(0, newTasks, maintenances, pheromoneMatrix);
-		pheromoneMatrix.updateMatrix(instance.getTasks());
+		pheromoneMatrix.updateMatrix(instance.getTasks(), 1);
 		int allEndsSum = instance.getTasks().stream().mapToInt(t -> t.getFirst().getEnd() + t.getSecond().getEnd())
 				.sum();
-		assertAll("Ant Known Path", () -> assertTrue(ant.getPathLength() == allEndsSum),
+		assertAll("AntTest", () -> assertTrue(instance.getQuality() == allEndsSum),
 				() -> assertTrue(allEndsSum > 0),
-				() -> assertTrue(ant.getPath().size() == amount),
-				() -> assertTrue(ant.getPath().stream().filter(t -> t.getFirst().getBegin() == 0).count() <= 1));
+				() -> assertTrue(instance.getTasks().size() == amount),
+				() -> assertTrue(instance.getTasks().stream().filter(t -> t.getFirst().getBegin() == 0).count() <= 1));
 	}
 
 	private List<Task> prepareTestTasks(int amount, int maxDuration) {

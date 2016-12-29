@@ -51,6 +51,21 @@ public class Task implements Comparable<Task>{
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Task task = (Task) o;
+
+        return id == task.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+
+    @Override
     public int compareTo(Task o) {
         return Integer.compare(this.getFirst().getBegin(), o.getFirst().getBegin());
     }

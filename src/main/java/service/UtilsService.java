@@ -11,11 +11,13 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class UtilsService {
+	private final static DecimalFormat decimalFormat= new DecimalFormat("#0.00");
 	private UtilsService() {
 		throw new UnsupportedOperationException();
 	}
@@ -69,4 +71,19 @@ public class UtilsService {
 		}
 		return paths;
 	}
+
+	public static void showProgress(int progress, int total, String message) {
+		String anim= "|/-\\";
+		double value = progress * 100 / (double) total;
+		String data = "\r\033[34m" + anim.charAt(progress % anim.length())  + " " + decimalFormat.format(value) + "%";
+			if (message != null) {
+				data += " \033[32m" + message + "\033[38m";
+			}
+		try {
+			System.out.write(data.getBytes());
+		} catch (IOException e) {
+			throw new RuntimeException();
+		}
+	}
+
 }
