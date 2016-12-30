@@ -4,21 +4,25 @@ import model.Task;
 import model.wrapper.Instance;
 import service.UtilsService;
 
+import java.io.IOException;
 import java.util.*;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import java.util.stream.Collectors;
 
 public class AntColonyAlgorithm {
 	private final static int RANDOM_SOLUTIONS_EDGE = 25;
-	private final static int AMNESIA_REQUIREMENT = 100000;
-	private final static int SOLUTIONS_TO_SAVE = 30000;
+	private final static int AMNESIA_REQUIREMENT = 30000;
+	private final static String CHART_FOLDER = "chartData";
 
+	private final Logger logger;
 	private final PheromoneMatrix pheromoneMatrix;
 	private final int iterations;
 	private final int antPopulation;
 	private final Instance instance;
 	private final int solutionPersistenceAmount;
 	private final int smallIterationBorder = 100;
-
 
 	public AntColonyAlgorithm(final int iterations, final int antPopulation, final double evaporationRatio,
 							  final Instance instance, final int solutionPersistenceAmount) {
@@ -27,10 +31,24 @@ public class AntColonyAlgorithm {
 		this.instance = instance;
 		this.solutionPersistenceAmount = solutionPersistenceAmount;
 		this.pheromoneMatrix = new PheromoneMatrix(instance.getTasks().size(), evaporationRatio);
+		logger = Logger.getLogger(AntColonyAlgorithm.class.getName());
+		logger.setUseParentHandlers(false);
+
+		System.setProperty("java.util.logging.SimpleFormatter.format","%5$s%6$s%n");
+		try {
+			String savePathForNewFile = UtilsService
+					.getSavePathForNewFile(CHART_FOLDER, "It" + iterations + "An" + antPopulation);
+			FileHandler fh = new FileHandler(savePathForNewFile + ".log");
+			logger.addHandler(fh);
+			SimpleFormatter formatter = new SimpleFormatter();
+			fh.setFormatter(formatter);
+		} catch (SecurityException | IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public Instance run(boolean isSmart, long endTime) {
-		final Map<Integer, List<Task>> alreadyDiscovered = new HashMap<>();
+		final Set<List<Task>> alreadyDiscovered = new HashSet<>();
 		Instance currentPath = makeSimpleIteration(0);
 		Instance bestPath = null;
 		int localOptimumDefender = 0;
@@ -39,6 +57,7 @@ public class AntColonyAlgorithm {
 			long start = System.currentTimeMillis();
 			for (int iteration = 1; iteration < iterations || System.currentTimeMillis() < endTime; iteration++) {
 				if (iteration % 10 == 0) {
+					logger.info(iteration + " " + currentPath.getQuality());
 					String toShow = String.valueOf(currentPath.getQuality());
 					if (bestPath != null) {
 						toShow += " \033[33m" + bestPath.getQuality();
@@ -53,7 +72,8 @@ public class AntColonyAlgorithm {
 				Instance result = makeSmartIteration(iteration, iterations, currentPath, alreadyDiscovered);
 				if (result.getQuality() / (double) currentPath.getQuality() >= 0.9995) {
 					if (localOptimumDefender >= smallIterationBorder) {
-						if ((bestPath != null && bestPath.getQuality() > currentPath.getQuality()) || bestPath == null) {
+						if ((bestPath != null && bestPath.getQuality() > currentPath
+								.getQuality()) || bestPath == null) {
 							bestPath = currentPath;
 						}
 						currentPath = makeSimpleIteration(0);
@@ -92,19 +112,14 @@ public class AntColonyAlgorithm {
 	}
 
 	private Instance makeSmartIteration(int iterationNumber, int totalIterations, Instance bestResult,
-										Map<Integer, List<Task>> alreadyDiscovered) {
+										Set<List<Task>> alreadyDiscovered) {
 		int smallIteration = (iterationNumber + 1) % smallIterationBorder;
 		double independenceRatio = getSmartIndependenceRatio(smallIteration);
 		boolean smallIterationReset = smallIteration == 0;
 		Set<Instance> results;
 		if (iterationNumber >= RANDOM_SOLUTIONS_EDGE && iterationNumber % 10 == 0) {
-			int solutionsInMap = alreadyDiscovered.size();
-			if (AMNESIA_REQUIREMENT <= solutionsInMap) {
-				int toRemove = solutionsInMap - SOLUTIONS_TO_SAVE;
-				for (int current = toRemove; current < solutionsInMap; current++) {
-					alreadyDiscovered.put(current - toRemove, alreadyDiscovered.get(current));
-				}
-				alreadyDiscovered.keySet().removeIf(index -> index > SOLUTIONS_TO_SAVE);
+			if (AMNESIA_REQUIREMENT <= alreadyDiscovered.size()) {
+				alreadyDiscovered.clear();
 			}
 			results = extendTheBestSolution(bestResult, alreadyDiscovered);
 		} else {
@@ -144,9 +159,9 @@ public class AntColonyAlgorithm {
 		return results;
 	}
 
-	private Set<Instance> extendTheBestSolution(Instance bestResult, Map<Integer, List<Task>> alreadyDiscovered) {
+	private Set<Instance> extendTheBestSolution(Instance bestResult, Set<List<Task>> alreadyDiscovered) {
 		Set<Instance> results = new TreeSet<>();
-		alreadyDiscovered.put(alreadyDiscovered.size(),bestResult.getTasks());
+		alreadyDiscovered.add(bestResult.getTasks());
 
 		for (int i = 0; i < antPopulation; i++) {
 			Instance result = expeditionsAntOnADiscovery(bestResult.getTasks(), alreadyDiscovered);
@@ -176,7 +191,7 @@ public class AntColonyAlgorithm {
 		return bestResult;
 	}
 
-	private Instance expeditionsAntOnADiscovery(final List<Task> bestPath, Map<Integer, List<Task>> alreadyDiscovered) {
+	private Instance expeditionsAntOnADiscovery(final List<Task> bestPath, Set<List<Task>> alreadyDiscovered) {
 		return new Ant()
 				.extendTheBestPath(bestPath, instance.getMaintenances(), alreadyDiscovered);
 	}

@@ -18,14 +18,14 @@ public class Ant {
 	}
 
 	public Instance extendTheBestPath(final List<Task> theBestPath, List<Maintenance> maintenances,
-									   Map<Integer,List<Task>> alreadyDiscovered) {
+									   Set<List<Task>> alreadyDiscovered) {
 		List<Task> way = UtilsService.deepClone(theBestPath);
 		int size = theBestPath.size();
 		Random randomGenerator = new Random();
 		do {
 			Collections.swap(way, randomGenerator.nextInt(size), randomGenerator.nextInt(size));
-		} while (alreadyDiscovered.containsValue(way));
-		alreadyDiscovered.put(alreadyDiscovered.size(), way);
+		} while (alreadyDiscovered.contains(way));
+		alreadyDiscovered.add(way);
 		return prepareInstance(way, maintenances);
 	}
 

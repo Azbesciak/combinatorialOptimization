@@ -31,7 +31,7 @@ public class SolutionService {
 	private SolutionService() {
 	}
 
-	public static void persistSolutionsResults(Iterable<String> futures) throws Exception {
+	public static void persistSolutionsResults(Iterable<String> results) throws Exception {
 		String solutionsDirectory = getAutoResultsSolutionsDirectory();
 		String localDate = LocalDateTime.now().toLocalDate().toString();
 		String solutionFile = solutionsDirectory + localDate;
@@ -41,8 +41,8 @@ public class SolutionService {
 		}
 		solutionFile += ".txt";
 		try (FileOutputStream writer = new FileOutputStream(solutionFile)) {
-			for (String future : futures) {
-				UtilsService.writeLineToFile(writer, future);
+			for (String result : results) {
+				UtilsService.writeLineToFile(writer, result);
 			}
 		}
 	}

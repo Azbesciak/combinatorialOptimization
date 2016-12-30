@@ -71,6 +71,16 @@ public class UtilsService {
 		}
 		return paths;
 	}
+	public static String getSavePathForNewFile(String dir, String name) throws IOException {
+		String directory = getDirectory(dir);
+		List<Path> allFilesInDirectoryByName = getAllFilesInDirectoryByName(dir, name);
+		int size = allFilesInDirectoryByName.size();
+		if (size > 0) {
+			name += "(" + size + ")";
+		}
+		return directory + "/" + name;
+	}
+
 
 	public static void showProgress(int progress, int total, String message) {
 		String anim= "|/-\\";
