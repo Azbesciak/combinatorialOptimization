@@ -18,7 +18,7 @@ public class Ant {
 	}
 
 	public Instance extendTheBestPath(final List<Task> theBestPath, List<Maintenance> maintenances,
-									   Set<List<Task>> alreadyDiscovered) {
+									  Set<List<Task>> alreadyDiscovered) {
 		List<Task> way = UtilsService.deepClone(theBestPath);
 		int size = theBestPath.size();
 		Random randomGenerator = new Random();
@@ -28,6 +28,7 @@ public class Ant {
 		alreadyDiscovered.add(way);
 		return prepareInstance(way, maintenances);
 	}
+
 
 	public Instance prepareAntPath(double independenceRatio, final List<Task> tasks, List<Maintenance> maintenances,
 								   PheromoneMatrix matrix) {

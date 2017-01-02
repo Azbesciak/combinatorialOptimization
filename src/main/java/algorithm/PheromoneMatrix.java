@@ -3,6 +3,8 @@ package algorithm;
 import model.Task;
 
 import java.util.*;
+import java.util.stream.DoubleStream;
+import java.util.stream.Stream;
 
 public class PheromoneMatrix {
 	private double evaporationRatio;
@@ -12,32 +14,56 @@ public class PheromoneMatrix {
 	private final double MAX_VALUE;
 	private final double MIN_VALUE;
 	private final double INCREMENT_VALUE;
+	private int currentBestQuality;
 
-
-//	public PheromoneMatrix(int size, double evaporationRatio) {
-//		this(size, evaporationRatio, INITIAL_VALUE);
-//	}
 
 	public PheromoneMatrix(int size, double evaporationRatio) {
 		this.evaporationRatio = evaporationRatio;
-		this.pheromonesPath = new double[size][size];
-		this.entryPoints = new double[size];
+		pheromonesPath = new double[size][size];
+		entryPoints = new double[size];
 		MAX_VALUE = size / 10.0;
 		INCREMENT_VALUE = size / 100.0;
 		INITIAL_VALUE = size / 1000.0;
-		MIN_VALUE = size / 2000.0;
+		MIN_VALUE = size / 10000.0;
 		initializeMatrix(INITIAL_VALUE);
 	}
 
-//	public static PheromoneMatrix prepareTestMatrixWithZeros(int size, double evaporationRatio) {
-//		return new PheromoneMatrix(size, evaporationRatio, 0.0);
-//	}
-
 	private void initializeMatrix(double initialValue) {
+		currentBestQuality = Integer.MAX_VALUE;
 		for (int column = 0; column < pheromonesPath.length; column++) {
 			entryPoints[column] = initialValue;
 			for (int row = 0; row < pheromonesPath.length; row++) {
-				pheromonesPath[column][row] = initialValue;
+				if (column == row) {
+					pheromonesPath[column][row] = 0;
+				} else {
+					pheromonesPath[column][row] = initialValue;
+				}
+			}
+		}
+	}
+
+	public void saveBestOnes(int howMany) {
+		int size = entryPoints.length;
+		DoubleStream sorted = DoubleStream.of(entryPoints).sorted();
+		OptionalDouble entryMin = sorted.limit(size - howMany).max();
+		if (entryMin.isPresent()) {
+			double minValue = entryMin.getAsDouble();
+			for (int column = 0; column < size; column++) {
+				if (entryPoints[column] < minValue) {
+					entryPoints[column] = MIN_VALUE;
+				}
+			}
+		}
+		for (int column = 0; column< size; column++) {
+			sorted = DoubleStream.of(pheromonesPath[column]).sorted();
+			OptionalDouble rowMin = sorted.limit(size - howMany).max();
+			if (rowMin.isPresent()) {
+				double rowMinValue = rowMin.getAsDouble();
+				for (int row = 0; row < size; row++) {
+					if (pheromonesPath[column][row] < rowMinValue) {
+						pheromonesPath[column][row] = MIN_VALUE;
+					}
+				}
 			}
 		}
 	}
@@ -47,22 +73,41 @@ public class PheromoneMatrix {
 	}
 
 	public void evaporateMatrix() {
-		for (int columnNumber = 0; columnNumber < pheromonesPath.length; columnNumber++) {
-			entryPoints[columnNumber] = Math.max(MIN_VALUE, entryPoints[columnNumber] * evaporationRatio);
-			for (int rowNumber = 0; rowNumber < pheromonesPath.length; rowNumber++) {
-				pheromonesPath[columnNumber][rowNumber] = Math
-						.max(MIN_VALUE, pheromonesPath[columnNumber][rowNumber] * evaporationRatio);
+		for (int column = 0; column < pheromonesPath.length; column++) {
+			entryPoints[column] = Math.max(MIN_VALUE, entryPoints[column] * evaporationRatio);
+			for (int row = 0; row < pheromonesPath.length; row++) {
+				if (column != row) {
+					pheromonesPath[column][row] = Math
+							.max(MIN_VALUE, pheromonesPath[column][row] * evaporationRatio);
+				}
 			}
 		}
 	}
 
-	public void updateMatrix(List<Task> tasks, int multiplier) {
+	public void updateMatrix(List<Task> tasks, int quality) {
 		int entryId = tasks.get(0).getId();
-		entryPoints[entryId] = Math.min(multiplier * entryPoints[entryId] * INCREMENT_VALUE, MAX_VALUE);
+//		if (quality < currentBestQuality) {
+//			if (currentBestQuality < Integer.MAX_VALUE) {
+//				multiplyMatrix(quality / (double) currentBestQuality);
+//			}
+//			currentBestQuality = quality;
+//		}
+//		double multiplier = currentBestQuality / (double) quality;
+		entryPoints[entryId] = Math.min(entryPoints[entryId] + INCREMENT_VALUE, MAX_VALUE);
 		for (int number = 0; number < tasks.size() - 1; number++) {
+			int currentTaskId = tasks.get(number).getId();
 			int nextTaskId = tasks.get(number + 1).getId();
-			pheromonesPath[number][nextTaskId] = Math
-					.min(multiplier * pheromonesPath[number][nextTaskId] * INCREMENT_VALUE, MAX_VALUE);
+			pheromonesPath[currentTaskId][nextTaskId] = Math
+					.min(pheromonesPath[number][nextTaskId] + INCREMENT_VALUE, MAX_VALUE);
+		}
+	}
+
+	private void multiplyMatrix(double multiplier) {
+		for (int column = 0; column < pheromonesPath.length; column++) {
+			entryPoints[column] *= multiplier;
+			for (int row = 0; row < pheromonesPath.length; row++) {
+				pheromonesPath[column][row] *= multiplier;
+			}
 		}
 	}
 

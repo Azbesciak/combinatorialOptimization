@@ -11,12 +11,15 @@ import service.UtilsService;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.*;
 
 public class Main {
 	private static Scanner scanner = new Scanner(System.in);
+	private static final List<Double> EVAPORATION_LIST =
+			new ArrayList<>(Arrays.asList(0.6, 0.7, 0.8, 0.9, 0.95));
 
 	public static void main(String[] args) throws Exception {
 		Instance instance;
@@ -99,93 +102,108 @@ public class Main {
 	}
 
 	private static void automatic(String prefix, final Instance instance) throws Exception {
-		int iterations = 16;
+		int iterations = 7;
 		ExecutorService executorService = Executors.newWorkStealingPool();
 		List<Callable<Object>> callables = new ArrayList<>(iterations);
 		ConcurrentLinkedQueue<String> results = new ConcurrentLinkedQueue<>();
 		for (int i = 0; i < iterations; i++) {
 			final int iteration = i;
-			callables.add(() -> makeSolution(iteration, prefix, instance, 0L, results));
+			callables.add(() -> makeAutomaticSolution(iteration, prefix + iteration, instance, 0L, results));
 		}
 		long start = System.currentTimeMillis();
 		executorService.invokeAll(callables);
-
 		long end = System.currentTimeMillis();
-		SolutionService.persistSolutionsResults(results);
+
+		String header = "params";
+		for (Double ratio : EVAPORATION_LIST) {
+			header += " " + ratio;
+		}
+		header += " mediumTime[s]";
+		SolutionService.persistSolutionsResults(results, header);
 
 		System.out.println("TOTAL TIME : " + ((end - start) / (60.0 * 1000)) + " min");
 	}
 
-	private static Object makeSolution(int iteration, String prefix, Instance instance, long endTime,
-									   ConcurrentLinkedQueue<String> queue) throws IOException {
-		if ("0".equals(prefix)) {
-			prefix = "AUTO_";
-		}
+	private static Object makeAutomaticSolution(int iteration, String prefix, Instance instance, long endTime,
+												ConcurrentLinkedQueue<String> queue) throws IOException {
+//		if ("0".equals(prefix)) {
+//			prefix = "AUTO_";
+//		}
+		int evaporationIterator = 0;
+		int evaporationOptions = 5;
 		int iterations = getIterationsAmount(iteration);
 		int antPopulation = getAntPopulation(iteration);
-		double evaporationRatio = getEvaporation(iteration);
-		int solutionPersistenceAmount = getInstancesToPersistPerColonyTrail(iteration);
-		long start = System.currentTimeMillis();
-		AntColonyAlgorithm antColonyAlgorithm = new AntColonyAlgorithm(iterations, antPopulation, evaporationRatio,
-				instance,
-				solutionPersistenceAmount);
-		Instance result = antColonyAlgorithm.run(true, endTime);
-		long end = System.currentTimeMillis();
-		String instanceParams = "T" + instance.getTasks().size() + "_M" + instance.getMaintenances().size();
-		String customName = prefix + instanceParams + ";_It;" + iterations + ";_An;" +
-				antPopulation + ";_Ev;" + evaporationRatio + ";_Sp;" + solutionPersistenceAmount;
-		System.out.println(customName + " : " + (end - start) / 1000.0 + " sec");
-		SolutionService.persistSolution(result, customName);
+		double evaporationRatio = getEvaporation(evaporationIterator);
+		String testParams = "It" + iterations + "An" + antPopulation + "Ev" + evaporationRatio;
+		long totalTime = 0;
+		while (evaporationIterator++ < evaporationOptions) {
+			long iterationTotalTime = 0;
+			long IterationQualitySum = 0;
+			for (int i = 0; i < 10; i++) {
+				long start = System.currentTimeMillis();
+				AntColonyAlgorithm antColonyAlgorithm = new AntColonyAlgorithm(iterations, endTime, antPopulation,
+						evaporationRatio, instance, prefix + Thread.currentThread().getId());
+				Instance result = antColonyAlgorithm.run();
+				long end = System.currentTimeMillis();
+				iterationTotalTime += (end - start) / 1000.0;
+				IterationQualitySum += result.getQuality();
+			}
+			totalTime += (iterationTotalTime / 10.0);
+			testParams += " " + IterationQualitySum / 10.0;
+		}
+		testParams += " " + (totalTime / (double) evaporationOptions);
+		queue.add(testParams);
+//		String instanceParams = "T" + instance.getTasks().size() + "_M" + instance.getMaintenances().size();
+//		String customName = prefix + instanceParams + ";_It;" + iterations + ";_An;" +
+//				antPopulation + ";_Ev;" + evaporationRatio + ";_Sp;" + solutionPersistenceAmount;
+//		System.out.println(customName + " : " + (end - start) / 1000.0 + " sec");
+//		SolutionService.persistSolution(result, customName);
 
-		int initialSchedulingTime = result.getInitialSchedulingTime();
-		int quality = result.getQuality();
-		String toWrite = customName + "; start;" + initialSchedulingTime + "; end; " +
-				quality + "; improved by; " + (100.0 * (1 - quality / (double) initialSchedulingTime)) + "%";
-		queue.add(toWrite);
+//		int initialSchedulingTime = result.getInitialSchedulingTime();
+//		int quality = result.getQuality();
+//		String toWrite = customName + "; start;" + initialSchedulingTime + "; end; " +
+//				quality + "; improved by; " + (100.0 * (1 - quality / (double) initialSchedulingTime)) + "%";
+
 		return null;
 	}
 
 	private static int getIterationsAmount(int iteration) {
-		return makeSwitchForInts(iteration % 2);
+		return makeSwitchForInts(iteration);
 	}
 
 	private static int getAntPopulation(int iteration) {
-		int edge = iteration % 4;
-		return makeSwitchForInts(edge / 2);
+		return 1000000 / makeSwitchForInts(iteration);
 	}
 
 	private static int makeSwitchForInts(int param) {
 		switch (param) {
 			case 0:
-				return 1000;
+				return 100;
 			case 1:
-				return 10000;
+				return 500;
+			case 2:
+				return 1000;
+			case 3:
+				return 2000;
 			default:
-				return 100000;
+				return 5000;
 		}
 	}
 
 	private static int getInstancesToPersistPerColonyTrail(int iteration) {
 		int edge = iteration % 16;
-		return (edge / 8 + 1) * 2;
+		return (edge / 8 + 1);
 	}
 
 	private static double getEvaporation(int iteration) {
-		int edge = iteration % 8;
-		switch (edge / 4) {
-			case 0:
-				return 0.6;
-			case 1:
-				return 0.9;
-			default:
-				return 0.95;
-		}
+		int edge = iteration % EVAPORATION_LIST.size();
+		return EVAPORATION_LIST.get(edge);
 	}
 
 	private static void useInstanceToCustomSimulation(Instance instance) throws IOException {
 		int iterations = 0;
-		long endTime = 0L;
 		double timeInMinutes = 0;
+		long simulationEndTime = 0L;
 		System.out.println("limited by iterations or time [i/t]");
 		String choose = scanner.next();
 		if ("I".equalsIgnoreCase(choose)) {
@@ -219,13 +237,6 @@ public class Main {
 		}
 		double evaporationRatio = evaporationInput == 0 ? 0.7 : evaporationInput;
 
-		System.out.println("pass solution persistence per iteration amount");
-		amount = scanner.nextInt();
-		int solutionPersistenceAmount = amount == 0 ? 5 : amount;
-
-		System.out.println("Smart? [y/n]");
-		boolean isSmart = "Y".equalsIgnoreCase(scanner.next());
-
 		System.out.println("Pass a prefix (0 - none)");
 		String prefix = scanner.next();
 		if ("0".equals(prefix)) {
@@ -233,14 +244,22 @@ public class Main {
 		} else {
 			prefix += "_";
 		}
-		long start = System.currentTimeMillis();
 		if (timeInMinutes > 0) {
-			endTime = (long) (timeInMinutes * 60 * 1000) + start;
+			simulationEndTime = (long) (timeInMinutes * 60 * 1000) + System.currentTimeMillis();
 		}
-		AntColonyAlgorithm antColonyAlgorithm = new AntColonyAlgorithm(iterations, antPopulation, evaporationRatio,
-				instance,
-				solutionPersistenceAmount);
-		Instance receivedInstance = antColonyAlgorithm.run(isSmart, endTime);
+		performSimulationAndSaveResults(iterations, simulationEndTime, antPopulation, evaporationRatio, instance,
+				timeInMinutes, prefix);
+
+	}
+
+	private static int performSimulationAndSaveResults(int iterations, long endTime, int antPopulation, double evaporationRatio,
+														Instance instance,
+														double timeInMinutes,
+														String prefix) throws IOException {
+		AntColonyAlgorithm antColonyAlgorithm = new AntColonyAlgorithm(iterations,endTime, antPopulation, evaporationRatio,
+				instance, prefix);
+		long start = System.currentTimeMillis();
+		Instance receivedInstance = antColonyAlgorithm.run();
 		long end = System.currentTimeMillis();
 		UtilsService.printPrettyJson(receivedInstance);
 
@@ -252,8 +271,9 @@ public class Main {
 		} else {
 			customName += "_Ti" + timeInMinutes;
 		}
-		customName += "_An" + antPopulation + "_Ev" + evaporationRatio + "_Sp" + solutionPersistenceAmount;
+		customName += "_An" + antPopulation + "_Ev" + evaporationRatio;
 		System.out.println("\n" + customName + " : " + (end - start) / 1000.0 + " sec");
 		SolutionService.persistSolution(receivedInstance, customName);
+		return receivedInstance.getQuality();
 	}
 }
