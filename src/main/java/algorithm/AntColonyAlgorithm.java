@@ -12,10 +12,10 @@ import java.util.logging.SimpleFormatter;
 
 public class AntColonyAlgorithm {
 	private final static String CHART_FOLDER = "chartData";
-	private final static int RANDOM_SOLUTIONS_EDGE = 25;
+	private final static double RANDOM_SOLUTIONS_EDGE = 0.25;
 	private final static int AMNESIA_REQUIREMENT = 30000;
 	private static final int PATH_EXPLORATION_REQ = 10;
-	private static final int SEMI_MATRIX_SOLUTION_EDGE = 100;
+	private static final double SEMI_MATRIX_SOLUTION_EDGE = 0.7;
 	private static final int SEMI_MATRIX_SOLUTION_RANDOM_SCALE = 15;
 	private final static int SMALL_ITERATION_BORDER = 100;
 	private final static int STAGNATION_BORDER = 100;
@@ -131,14 +131,14 @@ public class AntColonyAlgorithm {
 	}
 
 
-	private double getIndependenceRatio(int condition, boolean firstCycle) {
-		if (condition < RANDOM_SOLUTIONS_EDGE) {
-			if (firstCycle) {
+	private double getIndependenceRatio(int condition, boolean isFirstCycle) {
+		if (condition < RANDOM_SOLUTIONS_EDGE * SMALL_ITERATION_BORDER) {
+			if (isFirstCycle) {
 				return 100;
 			} else {
 				return 70;
 			}
-		} else if (condition < SEMI_MATRIX_SOLUTION_EDGE) {
+		} else if (condition < SEMI_MATRIX_SOLUTION_EDGE * SMALL_ITERATION_BORDER) {
 			return SEMI_MATRIX_SOLUTION_RANDOM_SCALE;
 		} else {
 			return 0;

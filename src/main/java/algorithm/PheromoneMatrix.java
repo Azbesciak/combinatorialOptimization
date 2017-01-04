@@ -4,7 +4,6 @@ import model.Task;
 
 import java.util.*;
 import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
 
 public class PheromoneMatrix {
 	private double evaporationRatio;
@@ -14,7 +13,7 @@ public class PheromoneMatrix {
 	private final double MAX_VALUE;
 	private final double MIN_VALUE;
 	private final double INCREMENT_VALUE;
-	private int currentBestQuality;
+	private int firstSolutionQuality;
 
 
 	public PheromoneMatrix(int size, double evaporationRatio) {
@@ -29,7 +28,7 @@ public class PheromoneMatrix {
 	}
 
 	private void initializeMatrix(double initialValue) {
-		currentBestQuality = Integer.MAX_VALUE;
+		firstSolutionQuality = Integer.MAX_VALUE;
 		for (int column = 0; column < pheromonesPath.length; column++) {
 			entryPoints[column] = initialValue;
 			for (int row = 0; row < pheromonesPath.length; row++) {
@@ -86,19 +85,16 @@ public class PheromoneMatrix {
 
 	public void updateMatrix(List<Task> tasks, int quality) {
 		int entryId = tasks.get(0).getId();
-//		if (quality < currentBestQuality) {
-//			if (currentBestQuality < Integer.MAX_VALUE) {
-//				multiplyMatrix(quality / (double) currentBestQuality);
-//			}
-//			currentBestQuality = quality;
-//		}
-//		double multiplier = currentBestQuality / (double) quality;
-		entryPoints[entryId] = Math.min(entryPoints[entryId] + INCREMENT_VALUE, MAX_VALUE);
+		if (firstSolutionQuality == Integer.MAX_VALUE) {
+			firstSolutionQuality = quality;
+		}
+		double pheromone = INCREMENT_VALUE * firstSolutionQuality / (double) quality;
+		entryPoints[entryId] = Math.min(entryPoints[entryId] + pheromone, MAX_VALUE);
 		for (int number = 0; number < tasks.size() - 1; number++) {
 			int currentTaskId = tasks.get(number).getId();
 			int nextTaskId = tasks.get(number + 1).getId();
 			pheromonesPath[currentTaskId][nextTaskId] = Math
-					.min(pheromonesPath[number][nextTaskId] + INCREMENT_VALUE, MAX_VALUE);
+					.min(pheromonesPath[number][nextTaskId] + pheromone, MAX_VALUE);
 		}
 	}
 

@@ -19,7 +19,7 @@ import java.util.concurrent.*;
 public class Main {
 	private static Scanner scanner = new Scanner(System.in);
 	private static final List<Double> EVAPORATION_LIST =
-			new ArrayList<>(Arrays.asList(0.6, 0.7, 0.8, 0.9, 0.95));
+			new ArrayList<>(Arrays.asList(0.6,0.65));
 
 	public static void main(String[] args) throws Exception {
 		Instance instance;
@@ -102,7 +102,7 @@ public class Main {
 	}
 
 	private static void automatic(String prefix, final Instance instance) throws Exception {
-		int iterations = 7;
+		int iterations = 6;
 		ExecutorService executorService = Executors.newWorkStealingPool();
 		List<Callable<Object>> callables = new ArrayList<>(iterations);
 		ConcurrentLinkedQueue<String> results = new ConcurrentLinkedQueue<>();
@@ -115,10 +115,10 @@ public class Main {
 		long end = System.currentTimeMillis();
 
 		String header = "params";
-		for (Double ratio : EVAPORATION_LIST) {
+		for (double ratio : EVAPORATION_LIST) {
 			header += " " + ratio;
 		}
-		header += " mediumTime[s]";
+		header += " mediumTime[s] bestResult";
 		SolutionService.persistSolutionsResults(results, header);
 
 		System.out.println("TOTAL TIME : " + ((end - start) / (60.0 * 1000)) + " min");
@@ -126,32 +126,36 @@ public class Main {
 
 	private static Object makeAutomaticSolution(int iteration, String prefix, Instance instance, long endTime,
 												ConcurrentLinkedQueue<String> queue) throws IOException {
-//		if ("0".equals(prefix)) {
-//			prefix = "AUTO_";
-//		}
-		int evaporationIterator = 0;
-		int evaporationOptions = 5;
+		if ("0".equals(prefix)) {
+			prefix = "AUTO_";
+		}
 		int iterations = getIterationsAmount(iteration);
 		int antPopulation = getAntPopulation(iteration);
-		double evaporationRatio = getEvaporation(evaporationIterator);
-		String testParams = "It" + iterations + "An" + antPopulation + "Ev" + evaporationRatio;
+		String testParams = "It" + iterations + "An" + antPopulation;
 		long totalTime = 0;
-		while (evaporationIterator++ < evaporationOptions) {
-			long iterationTotalTime = 0;
-			long IterationQualitySum = 0;
-			for (int i = 0; i < 10; i++) {
+		int bestQuality = Integer.MAX_VALUE;
+		long iterationTotalTime = 0;
+		for (double evaporationRate : EVAPORATION_LIST){
+			int roundQuality = 0;
+			double rounds = 20.0;
+			for (int i = 0; i < rounds; i++) {
 				long start = System.currentTimeMillis();
 				AntColonyAlgorithm antColonyAlgorithm = new AntColonyAlgorithm(iterations, endTime, antPopulation,
-						evaporationRatio, instance, prefix + Thread.currentThread().getId());
+						evaporationRate, instance, prefix + Thread.currentThread().getId());
 				Instance result = antColonyAlgorithm.run();
 				long end = System.currentTimeMillis();
 				iterationTotalTime += (end - start) / 1000.0;
-				IterationQualitySum += result.getQuality();
+				if (result.getQuality() < bestQuality) {
+					bestQuality = result.getQuality();
+				}
+				roundQuality += result.getQuality();
 			}
-			totalTime += (iterationTotalTime / 10.0);
-			testParams += " " + IterationQualitySum / 10.0;
+			double mediumTimeFromRound = iterationTotalTime / rounds;
+			totalTime += mediumTimeFromRound;
+			testParams += " " + roundQuality / rounds;
 		}
-		testParams += " " + (totalTime / (double) evaporationOptions);
+		testParams += " " + (totalTime / (double) EVAPORATION_LIST.size());
+		testParams += " "  + bestQuality;
 		queue.add(testParams);
 //		String instanceParams = "T" + instance.getTasks().size() + "_M" + instance.getMaintenances().size();
 //		String customName = prefix + instanceParams + ";_It;" + iterations + ";_An;" +
@@ -180,24 +184,21 @@ public class Main {
 			case 0:
 				return 100;
 			case 1:
-				return 500;
+				return 250;
 			case 2:
-				return 1000;
+				return 500;
 			case 3:
+				return 1000;
+			case 4:
 				return 2000;
 			default:
-				return 5000;
+				return 4000;
 		}
 	}
 
 	private static int getInstancesToPersistPerColonyTrail(int iteration) {
 		int edge = iteration % 16;
 		return (edge / 8 + 1);
-	}
-
-	private static double getEvaporation(int iteration) {
-		int edge = iteration % EVAPORATION_LIST.size();
-		return EVAPORATION_LIST.get(edge);
 	}
 
 	private static void useInstanceToCustomSimulation(Instance instance) throws IOException {
