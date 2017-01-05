@@ -14,7 +14,7 @@ public class AntColonyAlgorithm {
 	private final static String CHART_FOLDER = "chartData";
 	private final static double RANDOM_SOLUTIONS_EDGE = 0.25;
 	private final static int AMNESIA_REQUIREMENT = 30000;
-	private static final int PATH_EXPLORATION_REQ = 10;
+
 	private static final double SEMI_MATRIX_SOLUTION_EDGE = 0.7;
 	private static final int SEMI_MATRIX_SOLUTION_RANDOM_SCALE = 15;
 	private final static int SMALL_ITERATION_BORDER = 100;
@@ -26,14 +26,16 @@ public class AntColonyAlgorithm {
 	private final long endTime;
 	private final int antPopulation;
 	private final Instance instance;
+	private int pathExplorationReq = 10;
 
 	public AntColonyAlgorithm(final int iterations, long endTime, final int antPopulation,
-							  final double evaporationRatio, final Instance instance, String prefix) {
+							  final double evaporationRatio, final Instance instance, String prefix, int pathExplorationReq) {
 		this.iterations = iterations;
 		this.endTime = endTime;
 		this.antPopulation = antPopulation;
 		this.instance = instance;
 		this.pheromoneMatrix = new PheromoneMatrix(instance.getTasks().size(), evaporationRatio);
+		this.pathExplorationReq = pathExplorationReq;
 		logger = Logger.getLogger(this.toString());
 		logger.setUseParentHandlers(false);
 
@@ -112,7 +114,7 @@ public class AntColonyAlgorithm {
 		double independenceRatio = getIndependenceRatio(smallIteration, iterationNumber < SMALL_ITERATION_BORDER);
 		boolean smallIterationReset = smallIteration == 0;
 		Instance result;
-		if (iterationNumber % PATH_EXPLORATION_REQ == 0) {
+		if (iterationNumber % pathExplorationReq == 0) {
 			if (AMNESIA_REQUIREMENT <= alreadyDiscovered.size()) {
 				alreadyDiscovered.clear();
 			}

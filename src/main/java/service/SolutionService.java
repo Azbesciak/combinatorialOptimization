@@ -8,6 +8,7 @@ import model.Task;
 import model.abstracts.Event;
 import model.wrapper.Instance;
 import model.wrapper.TimeLineEvent;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -41,7 +42,9 @@ public class SolutionService {
 		}
 		solutionFile += ".txt";
 		try (FileOutputStream writer = new FileOutputStream(solutionFile)) {
-			UtilsService.writeLineToFile(writer, header);
+			if (StringUtils.isNotBlank(header)) {
+				UtilsService.writeLineToFile(writer, header);
+			}
 			for (String result : results) {
 				UtilsService.writeLineToFile(writer, result);
 			}
