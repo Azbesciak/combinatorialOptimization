@@ -23,7 +23,9 @@ import java.util.stream.Stream;
 
 public class InstanceRepository {
 
+//	private static final String INSTANCES_JSON_DIRECTORY = "testDir/instances/json";
 	private static final String INSTANCES_JSON_DIRECTORY = "instances/json";
+//	private static final String INSTANCES_READABLE_DIRECTORY = "testDir/instances/read";
 	private static final String INSTANCES_READABLE_DIRECTORY = "instances/read";
 	private static final String INSTANCE_DEFAULT_ID_FORMAT = "{0}_T{1}_M{2}";
 

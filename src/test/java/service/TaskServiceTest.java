@@ -7,7 +7,6 @@ import model.Operation;
 import model.Task;
 import org.junit.jupiter.api.Test;
 
-import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,7 +18,7 @@ public class TaskServiceTest {
 
 		int longestTime = 15;
 		int amount = 100;
-		List<Task> tasks = TaskService.generateTasks(amount, longestTime);
+		List<Task> tasks = TaskService.generateTasks(amount, longestTime, 0);
 		assertEquals(amount, tasks.size());
 		for (Task task : tasks) {
 
@@ -37,7 +36,7 @@ public class TaskServiceTest {
 	public void readyTimeTest() throws Exception {
 		int longestTime = 15;
 		int amount = 100;
-		List<Task> tasks = TaskService.generateTasks(amount, longestTime);
+		List<Task> tasks = TaskService.generateTasks(amount, longestTime, 0);
 		int totalTasksDuration = TaskService.getTotalTasksDuration(tasks);
 		for (Task task : tasks) {
 			assertTrue(task.getFirst().getReadyTime() < 0.5 * totalTasksDuration);
@@ -49,24 +48,24 @@ public class TaskServiceTest {
 	public void generateTasksNegativeLongTime() throws Exception {
 		int longestTime = 1;
 		int amount = 0;
-		assertThrows(NonNegativeArgException.class, () -> TaskService.generateTasks(amount, longestTime));
+		assertThrows(NonNegativeArgException.class, () -> TaskService.generateTasks(amount, longestTime, 0));
 	}
 
 	@Test
 	public void generateTasksNegativeAmount() throws Exception {
 		int longestTime = 0;
 		int amount = 1;
-		assertThrows(NonNegativeArgException.class, () -> TaskService.generateTasks(amount, longestTime));
+		assertThrows(NonNegativeArgException.class, () -> TaskService.generateTasks(amount, longestTime, 0));
 	}
 
 	@Test
 	public void randomGeneratorTest() throws  Exception {
 		int longestTime = 15;
 		int amount = 100;
-		List<Task> tasks = TaskService.generateTasks(amount, longestTime);
+		List<Task> tasks = TaskService.generateTasks(amount, longestTime, 0);
 		int totalTasksDuration = TaskService.getTotalTasksDuration(tasks);
 		List<Maintenance> maintenances = MaintenanceService.
-				generateMaintenances(totalTasksDuration, amount / 4, longestTime);
+				generateMaintenances(totalTasksDuration, amount / 4, longestTime, 0);
 		List<Task> randoms = TaskService.randomGenerator(maintenances, tasks);
 		assertAll("randomGeneratorTest",
 				() -> assertTrue(randoms.stream().allMatch(t -> t.getId() < amount)),

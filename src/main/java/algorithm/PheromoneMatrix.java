@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.stream.DoubleStream;
 
 public class PheromoneMatrix {
-	private double evaporationRatio;
+	private double evaporationRate;
 	private double[][] pheromonesPath;
 	private double[] entryPoints;
 	private final double INITIAL_VALUE;
@@ -16,8 +16,8 @@ public class PheromoneMatrix {
 	private int firstSolutionQuality;
 
 
-	public PheromoneMatrix(int size, double evaporationRatio) {
-		this.evaporationRatio = evaporationRatio;
+	public PheromoneMatrix(int size, double evaporationRate) {
+		this.evaporationRate = evaporationRate;
 		pheromonesPath = new double[size][size];
 		entryPoints = new double[size];
 		MAX_VALUE = size / 10.0;
@@ -29,13 +29,13 @@ public class PheromoneMatrix {
 
 	private void initializeMatrix(double initialValue) {
 		firstSolutionQuality = Integer.MAX_VALUE;
-		for (int column = 0; column < pheromonesPath.length; column++) {
-			entryPoints[column] = initialValue;
-			for (int row = 0; row < pheromonesPath.length; row++) {
-				if (column == row) {
-					pheromonesPath[column][row] = 0;
+		for (int row = 0; row < pheromonesPath.length; row++) {
+			entryPoints[row] = initialValue;
+			for (int column = 0; column < pheromonesPath.length; column++) {
+				if (row == column) {
+					pheromonesPath[row][column] = 0;
 				} else {
-					pheromonesPath[column][row] = initialValue;
+					pheromonesPath[row][column] = initialValue;
 				}
 			}
 		}
@@ -47,20 +47,20 @@ public class PheromoneMatrix {
 		OptionalDouble entryMin = sorted.limit(size - howMany).max();
 		if (entryMin.isPresent()) {
 			double minValue = entryMin.getAsDouble();
-			for (int column = 0; column < size; column++) {
-				if (entryPoints[column] < minValue) {
-					entryPoints[column] = MIN_VALUE;
+			for (int row = 0; row < size; row++) {
+				if (entryPoints[row] < minValue) {
+					entryPoints[row] = MIN_VALUE;
 				}
 			}
 		}
-		for (int column = 0; column< size; column++) {
-			sorted = DoubleStream.of(pheromonesPath[column]).sorted();
+		for (int row = 0; row< size; row++) {
+			sorted = DoubleStream.of(pheromonesPath[row]).sorted();
 			OptionalDouble rowMin = sorted.limit(size - howMany).max();
 			if (rowMin.isPresent()) {
 				double rowMinValue = rowMin.getAsDouble();
-				for (int row = 0; row < size; row++) {
-					if (pheromonesPath[column][row] < rowMinValue) {
-						pheromonesPath[column][row] = MIN_VALUE;
+				for (int column = 0; column < size; column++) {
+					if (pheromonesPath[row][column] < rowMinValue) {
+						pheromonesPath[row][column] = MIN_VALUE;
 					}
 				}
 			}
@@ -72,12 +72,12 @@ public class PheromoneMatrix {
 	}
 
 	public void evaporateMatrix() {
-		for (int column = 0; column < pheromonesPath.length; column++) {
-			entryPoints[column] = Math.max(MIN_VALUE, entryPoints[column] * evaporationRatio);
-			for (int row = 0; row < pheromonesPath.length; row++) {
-				if (column != row) {
-					pheromonesPath[column][row] = Math
-							.max(MIN_VALUE, pheromonesPath[column][row] * evaporationRatio);
+		for (int row = 0; row < pheromonesPath.length; row++) {
+			entryPoints[row] = Math.max(MIN_VALUE, entryPoints[row] * evaporationRate);
+			for (int column = 0; column < pheromonesPath.length; column++) {
+				if (row != column) {
+					pheromonesPath[row][column] = Math
+							.max(MIN_VALUE, pheromonesPath[row][column] * evaporationRate);
 				}
 			}
 		}
@@ -120,7 +120,7 @@ public class PheromoneMatrix {
 		return "PheromoneMatrix{" +
 				"pheromonesPath=" + Arrays.deepToString(pheromonesPath) +
 				", entryPoints=" + Arrays.toString(entryPoints) +
-				", evaporationRatio=" + evaporationRatio +
+				", evaporationRate=" + evaporationRate +
 				'}';
 	}
 }

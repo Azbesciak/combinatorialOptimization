@@ -26,8 +26,10 @@ import static service.UtilsService.writeAllLinesToFile;
 
 public class SolutionService {
 
+//	private static final String SOLUTIONS_DIRECTORY = "testDir/solutions";
 	private static final String SOLUTIONS_DIRECTORY = "solutions";
 	private static final String AUTO_RESULTS_SOLUTIONS_DIRECTORY = "autoResults";
+//	private static final String AUTO_RESULTS_SOLUTIONS_DIRECTORY = "testDir/autoResults";
 
 	private SolutionService() {
 	}

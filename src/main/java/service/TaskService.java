@@ -16,23 +16,26 @@ public class TaskService {
 		throw new UnsupportedOperationException();
 	}
 
-	public static List<Task> generateTasks(int amount, int longestTime) throws NonNegativeArgException {
+	public static List<Task> generateTasks(int amount, int longestTime, int shortestTime) throws NonNegativeArgException {
 		if (longestTime <= 0) {
 			throw new NonNegativeArgException("Task time must be positive!");
 		}
 		if (amount <= 0) {
 			throw new NonNegativeArgException("Task amount must be positive!");
 		}
+		if (shortestTime < 0) {
+			shortestTime = 1;
+		}
 		Random random = new Random();
 		int maxReadyTime = (int) ((amount * longestTime) * 0.2);
 		List<Task> tasks = new ArrayList<>();
 		Task.resetIndexer();
 		for (int i = 0; i < amount; i++) {
-			int firstTaskDuration = random.nextInt((longestTime - 1)) + 1;
+			int firstTaskDuration = getTaskDuration(shortestTime, longestTime);
 			int readyTime = random.nextBoolean() ? random.nextInt(maxReadyTime) : 0;
 			Operation first = Operation.createFirstMachineOperation(firstTaskDuration, readyTime);
 
-			int secondTimeDuration = random.nextInt((longestTime - 1)) + 1;
+			int secondTimeDuration = getTaskDuration(shortestTime, longestTime);
 			Operation second = Operation.createSecondMachineOperation(secondTimeDuration);
 
 			Task task = new Task(first, second);
@@ -40,6 +43,9 @@ public class TaskService {
 		}
 		Task.resetIndexer();
 		return tasks;
+	}
+	private static int getTaskDuration(int minDuration, int maxDuration) {
+		return new Random().nextInt((maxDuration - minDuration)) + minDuration;
 	}
 
 	public static int getTotalTasksDuration(List<Task> tasks) {

@@ -27,9 +27,9 @@ public class OperationsServiceTest {
 		longestTime = 100;
 		taskAmount = 80;
 		maintenancesAmount = taskAmount / 4;
-		tasks = TaskService.generateTasks(taskAmount, longestTime);
+		tasks = TaskService.generateTasks(taskAmount, longestTime, 0);
 		int totalTime = TaskService.getTotalTasksDuration(tasks);
-		maintenances = MaintenanceService.generateMaintenances(totalTime, maintenancesAmount, longestTime);
+		maintenances = MaintenanceService.generateMaintenances(totalTime, maintenancesAmount, longestTime, 0);
 
 	}
 
