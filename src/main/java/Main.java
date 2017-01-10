@@ -19,7 +19,10 @@ public class Main {
 			new ArrayList<>(Arrays.asList(0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95));
 
 	private static final List<Integer> SOLUTION_PERSISTENCE_LIST =
-			new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5, 6));
+			new ArrayList<>(Arrays.asList(15,20,25,30));
+
+	private static final List<Integer> INDEPENDENCE_RATE_LIST =
+			new ArrayList<>(Arrays.asList(-1, 0, 5, 10, 15, 20));
 
 	public static void main(String[] args) throws Exception {
 		Instance instance = null;
@@ -27,9 +30,9 @@ public class Main {
 				"create new instances or load existing ones? \n" +
 						" 0 - new \n" +
 						" 1 - existing \n" +
-						" 2 - automatic with selected Instance \n" +
-						" 3 - Instances test \n" +
-						" 4 - Task amount comparison");
+						" 2 - automatic with selected Instance (SP)\n" +
+						" 3 - Instances test (DEV)\n" +
+						" 4 - Task amount comparison (DEV)");
 		int answer = scanner.nextInt();
 		switch (answer) {
 			case 0: {
@@ -72,7 +75,7 @@ public class Main {
 		int taskAmount = 50;
 		int maintenanceDuration = 150;
 		String prefix = "DifferentTasksComparison";
-		for (int i = 1; i <= 12; i++) {
+		for (int i = 1; i <= 36; i++) {
 			int tasksSize = taskAmount * (1 + (i % 4));
 			int maintenancesAmount = (int)(tasksSize * ((5 + (i % 3)) * 0.05));
 			Instance instance = newInstancePath(longestTime, shortestTime, tasksSize, maintenancesAmount, maintenanceDuration);
@@ -238,27 +241,13 @@ public class Main {
 		int iterations = 5;
 		ExecutorService executorService = Executors.newWorkStealingPool();
 		List<Callable<Object>> callables = new ArrayList<>(iterations);
-//		ConcurrentLinkedQueue<String> results = new ConcurrentLinkedQueue<>();
 		ConcurrentLinkedQueue<String[]> results = new ConcurrentLinkedQueue<>();
-//		for (int i = 0; i < iterations; i++) {
-//			final int iteration = i;
-//			callables.add(() -> makeAutomaticSolutionForEv(iteration, prefix + iteration, instance, 0L, results));
-//		}
 		for(int sp : SOLUTION_PERSISTENCE_LIST) {
 			callables.add(() -> makeAutomaticSolutionForSp(sp, prefix, instance, 0, results));
 		}
 		long start = System.currentTimeMillis();
 		executorService.invokeAll(callables);
 		long end = System.currentTimeMillis();
-
-//		String header = "params";
-//		for (double ratio : EVAPORATION_LIST) {
-//			header += " " + ratio;
-//		}
-//		for (int sp : SOLUTION_PERSISTENCE_LIST) {
-//			header += " " + sp;
-//		}
-//		header += " mediumTime[s] bestResult";
 		List<String> solutionPersistence = prepareResultFromArrays(results, "solutionPersistence");
 		SolutionService.persistSolutionsResults(solutionPersistence, "");
 
@@ -298,17 +287,6 @@ public class Main {
 		testParams += " " + (totalTime / (double) EVAPORATION_LIST.size());
 		testParams += " "  + bestQuality;
 		queue.add(testParams);
-//		String instanceParams = "T" + instance.getTasks().size() + "_M" + instance.getMaintenances().size();
-//		String customName = prefix + instanceParams + ";_It;" + iterations + ";_An;" +
-//				antPopulation + ";_Ev;" + evaporationRate + ";_Sp;" + solutionPersistenceAmount;
-//		System.out.println(customName + " : " + (end - start) / 1000.0 + " sec");
-//		SolutionService.persistSolution(result, customName);
-
-//		int initialSchedulingTime = result.getInitialSchedulingTime();
-//		int quality = result.getQuality();
-//		String toWrite = customName + "; start;" + initialSchedulingTime + "; end; " +
-//				quality + "; improved by; " + (100.0 * (1 - quality / (double) initialSchedulingTime)) + "%";
-
 		return null;
 	}
 	private static List<String> prepareResultFromArrays(Queue<String[]> listOfArrays, String name) {
@@ -335,8 +313,8 @@ public class Main {
 	private static Object makeAutomaticSolutionForSp(int sp, String prefix, Instance instance, long endTime,
 												ConcurrentLinkedQueue<String[]> queue) throws IOException {
 		String[] params = new String[5];
-		int iterations = 2000;//getIterationsAmount(iteration);
-		int antPopulation = 1000;//getAntPopulation(iteration);
+		int iterations = 2000;
+		int antPopulation = 1000;
 		double evaporationRate = 0.75;
 		String testParams = "It" + iterations + "An" + antPopulation;
 		params[0] = testParams;
@@ -454,7 +432,7 @@ public class Main {
 													   double timeInMinutes,
 													   String prefix) throws Exception {
 		AntColonyAlgorithm antColonyAlgorithm = new AntColonyAlgorithm(iterations, endTime, antPopulation,
-				1, evaporationRate,
+				0, evaporationRate,
 				instance, prefix);
 		long start = System.currentTimeMillis();
 		Instance receivedInstance = antColonyAlgorithm.run();

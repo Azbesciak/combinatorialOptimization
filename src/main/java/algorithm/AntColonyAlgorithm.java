@@ -12,41 +12,46 @@ import java.util.logging.SimpleFormatter;
 import java.util.stream.Collectors;
 
 public class AntColonyAlgorithm {
-//	private final static String CHART_FOLDER = "testDir/chartData";
+	//	private final static String CHART_FOLDER = "testDir/chartData";
 	private final static String CHART_FOLDER = "chartData";
 	private final static double RANDOM_SOLUTIONS_EDGE = 0.25;
+	public static final double PROGRESS_RATE = 0.9995;
+	private final int SOLUTION_PERSISTENCE;
 
 	private static final int PATH_EXPLORATION_REQ = 8;
 	private static final double SEMI_MATRIX_SOLUTION_EDGE = 0.7;
 	private static final int SEMI_MATRIX_SOLUTION_RANDOM_SCALE = 15;
 	private final static int SMALL_ITERATION_BORDER = 100;
 	private final static int STAGNATION_BORDER = 100;
+	private final static double TABOO_SIZE_ITERATIONS_PERCENTAGE = 0.03;
 	private final int AMNESIA_REQUIREMENT;
 	private final Logger logger;
 	private final PheromoneMatrix pheromoneMatrix;
 	private final int iterations;
 	private final long endTime;
 	private final int antPopulation;
-	private final int solutionPersistence;
 	private final Instance instance;
+	private final int independenceRatio;
 
 
-	public AntColonyAlgorithm(final int iterations, long endTime, final int antPopulation, final int solutionPersistence,
+	public AntColonyAlgorithm(final int iterations, long endTime, final int antPopulation, final int sp,
 							  final double evaporationRate, final Instance instance, String prefix) {
 		this.iterations = iterations;
 		this.endTime = endTime;
 		this.antPopulation = antPopulation;
 		this.instance = instance;
-		this.solutionPersistence = solutionPersistence;
+		this.independenceRatio = 0;
+		this.SOLUTION_PERSISTENCE = sp;
 		this.pheromoneMatrix = new PheromoneMatrix(instance.getTasks().size(), evaporationRate);
 		logger = Logger.getLogger(this.toString());
 		logger.setUseParentHandlers(false);
-		AMNESIA_REQUIREMENT = (int) Math.min(Math.max(iterations * 0.03 * antPopulation, antPopulation), 30 * 1000);
+		AMNESIA_REQUIREMENT = (int) Math.min(Math.max(iterations * TABOO_SIZE_ITERATIONS_PERCENTAGE * antPopulation,
+														antPopulation), 30 * 1000);
 		System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%6$s%n");
 		try {
 			String savePathForNewFile = UtilsService
 					.getSavePathForNewFile(CHART_FOLDER,
-							prefix + "It" + iterations + "An" + antPopulation + "Sp" + solutionPersistence);
+							prefix + "It" + iterations + "An" + antPopulation + "Sp" + SOLUTION_PERSISTENCE);
 			FileHandler fh = new FileHandler(savePathForNewFile + ".log");
 			logger.addHandler(fh);
 			SimpleFormatter formatter = new SimpleFormatter();
@@ -80,11 +85,12 @@ public class AntColonyAlgorithm {
 					UtilsService.showProgress(iteration, iterations, toShow);
 				}
 			}
-			Instance result = makeSmartIteration(iteration , resetMoment, iterations, currentPath, alreadyDiscovered, endTime != 0);
+			Instance result = makeSmartIteration(iteration , resetMoment,
+					iterations, currentPath, alreadyDiscovered, endTime != 0);
 			if (result.getQuality() < instanceToShow.getQuality()) {
 				instanceToShow = result;
 			}
-			if (result.getQuality() / (double) currentPath.getQuality() >= 0.9995) {
+			if (result.getQuality() / (double) currentPath.getQuality() >= PROGRESS_RATE) {
 				if (localOptimumDefender >= STAGNATION_BORDER && (iteration < 0.9 * iterations || endTime > 0)) {
 					if ((bestPath != null && bestPath.getQuality() > currentPath.getQuality()) || bestPath == null) {
 						bestPath = currentPath;
@@ -119,22 +125,20 @@ public class AntColonyAlgorithm {
 	private Instance makeSmartIteration(int iterationNumber, int resetMoment, int totalIterations, Instance bestResult,
 										Set<List<Task>> alreadyDiscovered, boolean isTimeLimited) {
 		int smallIteration = (iterationNumber + 1 - resetMoment) % SMALL_ITERATION_BORDER;
-		double independenceRatio = 0;//getIndependenceRatio(smallIteration, iterationNumber < SMALL_ITERATION_BORDER);
+		double independenceRatio = this.independenceRatio == -1 ?
+				getModularizedIndependenceRatio(smallIteration, iterationNumber < SMALL_ITERATION_BORDER) :
+				this.independenceRatio;
 		boolean smallIterationReset = smallIteration == 0;
-//		Instance result;
 		Set<Instance> instances;
 		if (iterationNumber % PATH_EXPLORATION_REQ == 0) {
 			if (AMNESIA_REQUIREMENT <= alreadyDiscovered.size()) {
 				alreadyDiscovered.clear();
 			}
 			instances = extendTheBestSolution(bestResult, alreadyDiscovered);
-//			result = extendTheBestSolution(bestResult, alreadyDiscovered);
 		} else {
 			instances = goForResearch(independenceRatio);
-//			result = goForResearch(independenceRatio);
 		}
 		boolean shouldResetMatrix = smallIterationReset && (iterationNumber < totalIterations - 1 || isTimeLimited);
-//		Instance instance = persistFirstAndGet(result);
 		Instance instance = persistAndGet(instances);
 		if (shouldResetMatrix && instance.getQuality() > bestResult.getQuality()) {
 
@@ -144,7 +148,7 @@ public class AntColonyAlgorithm {
 	}
 
 
-	private double getIndependenceRatio(int condition, boolean isFirstCycle) {
+	private double getModularizedIndependenceRatio(int condition, boolean isFirstCycle) {
 		if (condition < RANDOM_SOLUTIONS_EDGE * SMALL_ITERATION_BORDER) {
 			if (isFirstCycle) {
 				return 100;
@@ -160,22 +164,9 @@ public class AntColonyAlgorithm {
 
 	private Instance randomIteration() {
 		double independenceRatio = 100;
-//		Instance result = goForResearch(independenceRatio);
 		Set<Instance> instances = goForResearch(independenceRatio);
-//		return persistFirstAndGet(result);
 		return persistAndGet(instances);
 	}
-
-//	private Instance goForResearch(double independenceRatio) {
-//		Instance bestResult = null;
-//		for (int i = 0; i < antPopulation; i++) {
-//			Instance result = expeditionsAntOnAJourney(independenceRatio);
-//			if (bestResult == null || bestResult.getQuality() > result.getQuality()) {
-//				bestResult = result;
-//			}
-//		}
-//		return bestResult;
-//	}
 
 	private Set<Instance> goForResearch(double independenceRatio) {
 		Instance bestResult = null;
@@ -189,17 +180,6 @@ public class AntColonyAlgorithm {
 		}
 		return instances;
 	}
-
-//	private Instance extendTheBestSolution(Instance bestResult, Set<List<Task>> alreadyDiscovered) {
-//		alreadyDiscovered.add(bestResult.getTasks());
-//		for (int i = 0; i < antPopulation; i++) {
-//			Instance result = expeditionsAntOnADiscovery(bestResult.getTasks(), alreadyDiscovered);
-//			if (result.getQuality() < bestResult.getQuality()) {
-//				bestResult = result;
-//			}
-//		}
-//		return bestResult;
-//	}
 
 	private Set<Instance> extendTheBestSolution(Instance bestResult, Set<List<Task>> alreadyDiscovered) {
 		alreadyDiscovered.add(bestResult.getTasks());
@@ -216,17 +196,11 @@ public class AntColonyAlgorithm {
 
 	private Instance persistAndGet(Set<Instance> results) {
 		pheromoneMatrix.evaporateMatrix();
-		List<Instance> collect = results.stream().limit(solutionPersistence).collect(Collectors.toList());
+		List<Instance> collect = results.stream().limit(SOLUTION_PERSISTENCE).collect(Collectors.toList());
 		for (Instance inst : collect) {
 			pheromoneMatrix.updateMatrix(inst.getTasks(), inst.getQuality());
 		}
 		return collect.get(0);
-	}
-
-	private Instance persistFirstAndGet(Instance result) {
-		pheromoneMatrix.evaporateMatrix();
-		pheromoneMatrix.updateMatrix(result.getTasks(), result.getQuality());
-		return result;
 	}
 
 	private Instance expeditionsAntOnADiscovery(final List<Task> bestPath, Set<List<Task>> alreadyDiscovered) {
