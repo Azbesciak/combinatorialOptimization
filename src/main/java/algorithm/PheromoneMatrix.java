@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.stream.DoubleStream;
 
 public class PheromoneMatrix {
-	private double evaporationRate;
+	private double persistenceRate;
 	private double[][] pheromonesPath;
 	private double[] entryPoints;
 	private final double INITIAL_VALUE;
@@ -17,7 +17,7 @@ public class PheromoneMatrix {
 
 
 	public PheromoneMatrix(int size, double evaporationRate) {
-		this.evaporationRate = evaporationRate;
+		this.persistenceRate = 1 - evaporationRate;
 		pheromonesPath = new double[size][size];
 		entryPoints = new double[size];
 		MAX_VALUE = size / 10.0;
@@ -73,11 +73,11 @@ public class PheromoneMatrix {
 
 	public void evaporateMatrix() {
 		for (int row = 0; row < pheromonesPath.length; row++) {
-			entryPoints[row] = Math.max(MIN_VALUE, entryPoints[row] * evaporationRate);
+			entryPoints[row] = Math.max(MIN_VALUE, entryPoints[row] * persistenceRate);
 			for (int column = 0; column < pheromonesPath.length; column++) {
 				if (row != column) {
 					pheromonesPath[row][column] = Math
-							.max(MIN_VALUE, pheromonesPath[row][column] * evaporationRate);
+							.max(MIN_VALUE, pheromonesPath[row][column] * persistenceRate);
 				}
 			}
 		}
@@ -120,7 +120,7 @@ public class PheromoneMatrix {
 		return "PheromoneMatrix{" +
 				"pheromonesPath=" + Arrays.deepToString(pheromonesPath) +
 				", entryPoints=" + Arrays.toString(entryPoints) +
-				", evaporationRate=" + evaporationRate +
+				", persistenceRate=" + persistenceRate +
 				'}';
 	}
 }
